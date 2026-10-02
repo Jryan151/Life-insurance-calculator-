@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Pong - iOS Optimized</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Bowman - Core Engine</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none; /* Prevents unwanted iOS scrolling/zooming gestures */
+            touch-action: none;
         }
         body {
             background-color: #0f172a;
@@ -21,329 +21,225 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
-            position: fixed; /* Prevents rubber-band scrolling on iOS */
-            width: 100vw;
         }
         h1 {
-            margin-bottom: 3px;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
+            margin-bottom: 5px;
+            font-size: 1.5rem;
             color: #38bdf8;
+            letter-spacing: 2px;
         }
-        .meta-info {
+        .status-hud {
             margin-bottom: 8px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #94a3b8;
-        }
-        .canvas-container {
-            position: relative;
-            width: 94vw;
-            max-width: 800px;
-            aspect-ratio: 2 / 1; /* Keeps the game perfectly proportioned */
+            text-align: center;
         }
         canvas {
-            background-color: #020617;
+            background: linear-gradient(to bottom, #020617, #1e293b);
             border: 3px solid #334155;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            height: 100%;
             display: block;
         }
-        #gameOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(2, 6, 23, 0.88);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            z-index: 10;
-        }
-        #gameOverlay h2 {
-            font-size: 1.8rem;
-            margin-bottom: 12px;
-            color: #f8fafc;
-            text-align: center;
-        }
-        #restartBtn {
-            background-color: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 10px 22px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.95rem;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .instructions {
+        .controls-hint {
             margin-top: 10px;
-            font-size: 0.75rem;
-            color: #94a3b8;
+            font-size: 0.8rem;
+            color: #64748b;
             text-align: center;
-            padding: 0 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>RETRO PONG</h1>
-    <div class="meta-info" id="highScoreDisplay">Session Best Streak: 0</div>
+    <h1>BOWMAN DUEL</h1>
+    <div class="status-hud" id="hudText">Player 1's Turn: Drag to Aim, Release to Fire!</div>
     
-    <div class="canvas-container">
-        <canvas id="pongCanvas" width="800" height="400"></canvas>
-        <div id="gameOverlay">
-            <h2 id="winnerText">PLAYER 1 WINS!</h2>
-            <button id="restartBtn" onclick="resetGame()">PLAY AGAIN</button>
-        </div>
-    </div>
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
 
-    <div class="instructions">Use Keyboard (W/S, Arrows) or Drag Finger on Screen</div>
+    <div class="controls-hint">Hold & Drag Mouse/Finger anywhere to set Angle & Power</div>
 
     <script>
-        const canvas = document.getElementById("pongCanvas");
+        const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Game State Flags
-        let isGameOver = false;
-        let winStreak = parseInt(localStorage.getItem("pong_streak")) || 0;
-        updateHighScoreText();
+        // Game State
+        let turn = 1; // 1 for Player 1, 2 for Player 2
+        let wind = (Math.random() * 0.4) - 0.2; // Random wind factor
+        let gameState = "AIMING"; // AIMING, FLYING, GAME_OVER
 
-        // Game objects (based on internal 800x400 coordinate system)
-        const player = {
-            x: 20,
-            y: 400 / 2 - 40,
-            width: 12,
-            height: 80,
-            score: 0,
-            name: "PLAYER 1",
-            color: "#38bdf8",
-            speed: 6
-        };
+        // Players
+        const p1 = { x: 100, y: 320, health: 100, color: "#38bdf8", score: 0 };
+        const p2 = { x: 700, y: 320, health: 100, color: "#f43f5e", score: 0 };
 
-        const ai = {
-            x: 800 - 32,
-            y: 400 / 2 - 40,
-            width: 12,
-            height: 80,
-            score: 0,
-            name: "PLAYER 2",
-            color: "#f43f5e",
-            speed: 4.5
-        };
+        // Active Arrow in flight
+        let arrow = { x: 0, y: 0, vx: 0, vy: 0, active: false };
 
-        const ball = {
-            x: 800 / 2,
-            y: 400 / 2,
-            radius: 8,
-            speed: 5,
-            dx: 5,
-            dy: 3,
-            color: "#f8fafc"
-        };
+        // Aiming interaction inputs
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let currentDragX = 0;
+        let currentDragY = 0;
 
-        // Live abstract background particles
-        const particles = Array.from({ length: 35 }, () => ({
-            x: Math.random() * 800,
-            y: Math.random() * 400,
-            size: Math.random() * 2 + 1,
-            speed: Math.random() * 0.5 + 0.2
-        }));
-
-        // Keyboard controls
-        const keys = {};
-        window.addEventListener("keydown", (e) => { keys[e.code] = true; });
-        window.addEventListener("keyup", (e) => { keys[e.code] = false; });
-
-        // Accurate touch mapping scaling for iOS screen sizing
-        canvas.addEventListener("touchmove", (e) => {
-            if (isGameOver) return;
-            e.preventDefault();
+        // Input Listeners for Drag-to-Aim Mechanics
+        canvas.addEventListener("pointerdown", (e) => {
+            if (gameState !== "AIMING") return;
+            isDragging = true;
             const rect = canvas.getBoundingClientRect();
+            dragStartX = e.clientX - rect.left;
+            dragStartY = e.clientY - rect.top;
+            currentDragX = dragStartX;
+            currentDragY = dragStartY;
+        });
+
+        canvas.addEventListener("pointermove", (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            currentDragX = e.clientX - rect.left;
+            currentDragY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener("pointerup", (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            // Calculate vector based on pull-back distance (Angle and Power)
+            let shooter = turn === 1 ? p1 : p2;
+            let dx = dragStartX - currentDragX; // Pulling back launches forward
+            let dy = dragStartY - currentDragY;
+
+            arrow.x = shooter.x;
+            arrow.y = shooter.y - 30; // Bowman chest height
+            arrow.vx = dx * 0.12;
+            arrow.vy = dy * 0.12;
+            arrow.active = true;
+            gameState = "FLYING";
+            document.getElementById("hudText").innerText = "Shot Fired!";
+        });
+
+        function updatePhysics() {
+            if (!arrow.active) return;
+
+            // Apply gravity and wind
+            arrow.vy += 0.25; 
+            arrow.vx += wind; 
+
+            arrow.x += arrow.vx;
+            arrow.y += arrow.vy;
+
+            // Ground collision boundary
+            if (arrow.y > 350) {
+                arrow.active = false;
+                checkHitOrMiss();
+            }
+
+            // Screen boundary check
+            if (arrow.x < 0 || arrow.x > canvas.width || arrow.y < 0) {
+                arrow.active = false;
+                switchTurn();
+            }
+        }
+
+        function checkHitOrMiss() {
+            let target = turn === 1 ? p2 : p1;
             
-            // Calculate scale ratio between CSS display size and internal canvas coordinate size (800x400)
-            const scaleY = 400 / rect.height;
-            const touchY = (e.touches[0].clientY - rect.top) * scaleY;
-            
-            player.y = touchY - player.height / 2;
+            // Distance check to see if arrow hit target
+            let dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
 
-            if (player.y < 0) player.y = 0;
-            if (player.y + player.height > 400) {
-                player.y = 400 - player.height;
-            }
-        }, { passive: false });
-
-        function handleInput() {
-            if (isGameOver) return;
-            if (keys["KeyW"] || keys["ArrowUp"]) {
-                player.y -= player.speed;
-            }
-            if (keys["KeyS"] || keys["ArrowDown"]) {
-                player.y += player.speed;
-            }
-
-            if (player.y < 0) player.y = 0;
-            if (player.y + player.height > 400) {
-                player.y = 400 - player.height;
-            }
-        }
-
-        function updateAI() {
-            if (isGameOver) return;
-            const aiCenter = ai.y + ai.height / 2;
-            if (aiCenter < ball.y - 15) {
-                ai.y += ai.speed;
-            } else if (aiCenter > ball.y + 15) {
-                ai.y -= ai.speed;
-            }
-
-            if (ai.y < 0) ai.y = 0;
-            if (ai.y + ai.height > 400) {
-                ai.y = 400 - ai.height;
-            }
-        }
-
-        function moveBall() {
-            if (isGameOver) return;
-
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            if (ball.y - ball.radius < 0 || ball.y + ball.radius > 400) {
-                ball.dy *= -1;
-            }
-
-            if (
-                ball.x - ball.radius < player.x + player.width &&
-                ball.x + ball.radius > player.x &&
-                ball.y > player.y &&
-                ball.y < player.y + player.height
-            ) {
-                ball.dx *= -1;
-                let collidePoint = ball.y - (player.y + player.height / 2);
-                ball.dy = collidePoint * 0.15;
-            }
-
-            if (
-                ball.x + ball.radius > ai.x &&
-                ball.x - ball.radius < ai.x + ai.width &&
-                ball.y > ai.y &&
-                ball.y < ai.y + ai.height
-            ) {
-                ball.dx *= -1;
-                let collidePoint = ball.y - (ai.y + ai.height / 2);
-                ball.dy = collidePoint * 0.15;
-            }
-
-            if (ball.x - ball.radius < 0) {
-                ai.score++;
-                checkWinCondition();
-                if (!isGameOver) resetBall();
-            } else if (ball.x + ball.radius > 800) {
-                player.score++;
-                checkWinCondition();
-                if (!isGameOver) resetBall();
-            }
-        }
-
-        function checkWinCondition() {
-            if (player.score >= 5 || ai.score >= 5) {
-                isGameOver = true;
-                const winnerName = player.score >= 5 ? "PLAYER 1 WINS!" : "PLAYER 2 WINS!";
-                document.getElementById("winnerText").innerText = winnerName;
-                document.getElementById("gameOverlay").style.display = "flex";
-
-                if (player.score >= 5) {
-                    winStreak++;
-                    localStorage.setItem("pong_streak", winStreak);
-                    updateHighScoreText();
+            if (dist < 25) {
+                target.health -= 35;
+                if (target.health <= 0) {
+                    target.health = 0;
+                    document.getElementById("hudText").innerText = `PLAYER ${turn} WINS THE MATCH!`;
+                    gameState = "GAME_OVER";
+                    return;
                 }
+                document.getElementById("hudText").innerText = `Direct Hit! -35 HP`;
+            } else {
+                document.getElementById("hudText").innerText = `Missed!`;
+            }
+
+            setTimeout(switchTurn, 1500);
+        }
+
+        function switchTurn() {
+            if (gameState === "GAME_OVER") return;
+            turn = turn === 1 ? 2 : 1;
+            wind = (Math.random() * 0.4) - 0.2; // New random wind
+            gameState = "AIMING";
+            document.getElementById("hudText").innerText = `Player ${turn}'s Turn (Wind: ${wind > 0 ? 'East' : 'West'} ${(Math.abs(wind)*10).toFixed(1)})`;
+        }
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Ground Terrain Line
+            ctx.strokeStyle = "#334155";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, 350);
+            ctx.lineTo(canvas.width, 350);
+            ctx.stroke();
+
+            // Draw Players (Stickman Archer style)
+            drawArcher(p1.x, p1.y, p1.color, p1.health, "P1");
+            drawArcher(p2.x, p2.y, p2.color, p2.health, "P2");
+
+            // Draw Aiming Vector Line (Bow pull-back preview)
+            if (isDragging && gameState === "AIMING") {
+                let shooter = turn === 1 ? p1 : p2;
+                ctx.strokeStyle = "#38bdf8";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(shooter.x, shooter.y - 30);
+                // Draw opposite vector line for arc preview
+                let previewX = shooter.x - (currentDragX - dragStartX);
+                let previewY = shooter.y - 30 - (currentDragY - dragStartY);
+                ctx.lineTo(previewX, previewY);
+                ctx.stroke();
+            }
+
+            // Draw Flying Arrow
+            if (arrow.active) {
+                ctx.strokeStyle = "#f8fafc";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(arrow.x, arrow.y);
+                ctx.lineTo(arrow.x - arrow.vx * 2, arrow.y - arrow.vy * 2);
+                ctx.stroke();
             }
         }
 
-        function resetBall() {
-            ball.x = 800 / 2;
-            ball.y = 400 / 2;
-            ball.dx *= -1;
-            ball.dy = (Math.random() * 4) - 2;
-        }
+        function drawArcher(x, y, color, health, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
 
-        function resetGame() {
-            player.score = 0;
-            ai.score = 0;
-            isGameOver = false;
-            document.getElementById("gameOverlay").style.display = "none";
-            resetBall();
-        }
-
-        function updateHighScoreText() {
-            document.getElementById("highScoreDisplay").innerText = `Session Player Win Streak: ${winStreak}`;
-        }
-
-        function drawBackground() {
-            ctx.fillStyle = "#020617";
-            ctx.fillRect(0, 0, 800, 400);
-
-            ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
-            particles.forEach(p => {
-                p.x -= p.speed;
-                if (p.x < 0) p.x = 800;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-
-        function drawNet() {
-            ctx.strokeStyle = "#1e293b";
-            ctx.setLineDash([4, 15]);
+            // Head
             ctx.beginPath();
-            ctx.moveTo(800 / 2, 0);
-            ctx.lineTo(800 / 2, 400);
+            ctx.arc(x, y - 45, 10, 0, Math.PI * 2);
             ctx.stroke();
-            ctx.setLineDash([]);
-        }
 
-        function draw() {
-            drawBackground();
-            drawNet();
-
-            ctx.font = "14px 'Courier New', Courier, monospace";
-            ctx.textAlign = "center";
-            
-            ctx.fillStyle = player.color;
-            ctx.fillText(player.name, 800 / 4, 30);
-            ctx.font = "36px 'Courier New', Courier, monospace";
-            ctx.fillText(player.score, 800 / 4, 75);
-
-            ctx.font = "14px 'Courier New', Courier, monospace";
-            ctx.fillStyle = ai.color;
-            ctx.fillText(ai.name, (800 / 4) * 3, 30);
-            ctx.font = "36px 'Courier New', Courier, monospace";
-            ctx.fillText(ai.score, (800 / 4) * 3, 75);
-
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            ctx.fillStyle = ai.color;
-            ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
-
-            ctx.fillStyle = ball.color;
+            // Body
             ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(x, y - 35);
+            ctx.lineTo(x, y - 10);
+            // Legs
+            ctx.moveTo(x, y - 10);
+            ctx.lineTo(x - 12, y);
+            ctx.moveTo(x, y - 10);
+            ctx.lineTo(x + 12, y);
+            ctx.stroke();
+
+            // Health bar above archer
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(x - 20, y - 70, 40, 6);
+            ctx.fillStyle = color;
+            ctx.fillRect(x - 20, y - 70, (health / 100) * 40, 6);
         }
 
         function gameLoop() {
-            handleInput();
-            updateAI();
-            moveBall();
-            draw();
+            updatePhysics();
+            drawScene();
             requestAnimationFrame(gameLoop);
         }
 
