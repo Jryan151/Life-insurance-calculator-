@@ -68,142 +68,6 @@
             height: 80,
             score: 0,
             color: "#f43f5e",
-            speed: 4.2
-        };
-
-        const ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: 8,
-            speed: 5,
-            dx: 5,
-            dy: 3,
-            color: "#f8fafc"
-        };
-
-        // Keyboard control listeners
-        const keys = {};
-        window.addEventListener("keydown", (e) => { keys[e.code] = true; });
-        window.addEventListener("keyup", (e) => { keys[e.code] = false; });
-
-        function handleInput() {
-            if (keys["KeyW"] || keys["ArrowUp"]) {
-                player.y -= player.speed;
-            }
-            if (keys["KeyS"] || keys["ArrowDown"]) {
-                player.y += player.speed;
-            }
-
-            // Keep player inside canvas boundaries
-            if (player.y < 0) player.y = 0;
-            if (player.y + player.height > canvas.height) {
-                player.y = canvas.height - player.height;
-            }
-        }
-
-        function updateAI() {
-            const aiCenter = ai.y + ai.height / 2;
-            if (aiCenter < ball.y - 15) {
-                ai.y += ai.speed;
-            } else if (aiCenter > ball.y + 15) {
-                ai.y -= ai.speed;
-            }
-
-            // Keep AI inside boundaries
-            if (ai.y < 0) ai.y = 0;
-            if (ai.y + ai.height > canvas.height) {
-                ai.y = canvas.height - ai.height;
-            }
-        }
-
-        function moveBall() {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            // Top and bottom wall collision
-            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
-                ball.dy *= -1;
-            }
-
-            // Player paddle collision
-            if (
-                ball.x - ball.radius < player.x + player.width &&
-                ball.y > player.y &&
-                ball.My apologies! My previous response got cut off mid-code block, so let's get you sorted out with the complete, ready-to-run Pong code and the exact steps to put it on GitHub.
-
-Here is the complete, single-file retro Pong game code:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Pong</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        h1 {
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-            letter-spacing: 2px;
-            color: #38bdf8;
-        }
-        canvas {
-            background-color: #020617;
-            border: 4px solid #334155;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        }
-        .instructions {
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>PONG</h1>
-    <canvas id="pongCanvas" width="800" height="400"></canvas>
-    <div class="instructions">Use <strong>W / S</strong> or <strong>Up / Down Arrow Keys</strong> to move</div>
-
-    <script>
-        const canvas = document.getElementById("pongCanvas");
-        const ctx = canvas.getContext("2d");
-
-        // Game objects
-        const player = {
-            x: 20,
-            y: canvas.height / 2 - 40,
-            width: 12,
-            height: 80,
-            score: 0,
-            color: "#38bdf8",
-            speed: 6
-        };
-
-        const ai = {
-            x: canvas.width - 32,
-            y: canvas.height / 2 - 40,
-            width: 12,
-            height: 80,
-            score: 0,
-            color: "#f43f5e",
             speed: 4.5
         };
 
@@ -319,17 +183,14 @@ Here is the complete, single-file retro Pong game code:
         }
 
         function draw() {
-            // Clear screen
             ctx.fillStyle = "#020617";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             drawNet();
 
-            // Draw scores
             drawText(player.score, canvas.width / 4, 50, "#38bdf8", "40px");
             drawText(ai.score, (canvas.width / 4) * 3, 50, "#f43f5e", "40px");
 
-            // Draw paddles & ball
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
 
