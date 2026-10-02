@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Pong</title>
+    <title>Retro Pong - Upgraded</title>
     <style>
         * {
             box-sizing: border-box;
@@ -22,33 +22,92 @@
             overflow: hidden;
         }
         h1 {
-            margin-bottom: 10px;
-            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-size: 1.6rem;
             letter-spacing: 2px;
             color: #38bdf8;
+        }
+        .meta-info {
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .canvas-container {
+            position: relative;
         }
         canvas {
             background-color: #020617;
             border: 4px solid #334155;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: block;
+        }
+        /* Win state overlay card */
+        #gameOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            z-index: 10;
+        }
+        #gameOverlay h2 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            color: #f8fafc;
+            text-align: center;
+        }
+        #restartBtn {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 10px 24px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #restartBtn:hover {
+            background-color: #7dd3fc;
         }
         .instructions {
-            margin-top: 15px;
-            font-size: 0.9rem;
+            margin-top: 12px;
+            font-size: 0.85rem;
             color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-    <h1>PONG</h1>
-    <canvas id="pongCanvas" width="800" height="400"></canvas>
+    <h1>RETRO PONG</h1>
+    <div class="meta-info" id="highScoreDisplay">Session Best Streak: 0</div>
+    
+    <div class="canvas-container">
+        <canvas id="pongCanvas" width="800" height="400"></canvas>
+        <div id="gameOverlay">
+            <h2 id="winnerText">PLAYER 1 WINS!</h2>
+            <button id="restartBtn" onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
     <div class="instructions">Use <strong>W / S</strong> or <strong>Up / Down Arrow Keys</strong> to move</div>
 
     <script>
         const canvas = document.getElementById("pongCanvas");
         const ctx = canvas.getContext("2d");
+
+        // Game State Flags
+        let isGameOver = false;
+        let winStreak = parseInt(localStorage.getItem("pong_streak")) || 0;
+        updateHighScoreText();
 
         // Game objects
         const player = {
@@ -57,6 +116,7 @@
             width: 12,
             height: 80,
             score: 0,
+            name: "PLAYER 1",
             color: "#38bdf8",
             speed: 6
         };
@@ -67,6 +127,7 @@
             width: 12,
             height: 80,
             score: 0,
+            name: "PLAYER 2",
             color: "#f43f5e",
             speed: 4.5
         };
@@ -81,12 +142,21 @@
             color: "#f8fafc"
         };
 
+        // Live abstract background particles
+        const particles = Array.from({ length: 35 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2 + 1,
+            speed: Math.random() * 0.5 + 0.2
+        }));
+
         // Keyboard controls
         const keys = {};
         window.addEventListener("keydown", (e) => { keys[e.code] = true; });
         window.addEventListener("keyup", (e) => { keys[e.code] = false; });
 
         function handleInput() {
+            if (isGameOver) return;
             if (keys["KeyW"] || keys["ArrowUp"]) {
                 player.y -= player.speed;
             }
@@ -94,7 +164,6 @@
                 player.y += player.speed;
             }
 
-            // Keep player inside bounds
             if (player.y < 0) player.y = 0;
             if (player.y + player.height > canvas.height) {
                 player.y = canvas.height - player.height;
@@ -102,6 +171,7 @@
         }
 
         function updateAI() {
+            if (isGameOver) return;
             const aiCenter = ai.y + ai.height / 2;
             if (aiCenter < ball.y - 15) {
                 ai.y += ai.speed;
@@ -116,10 +186,12 @@
         }
 
         function moveBall() {
+            if (isGameOver) return;
+
             ball.x += ball.dx;
             ball.y += ball.dy;
 
-            // Top/bottom wall collision
+            // Wall collisions
             if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
                 ball.dy *= -1;
             }
@@ -148,13 +220,30 @@
                 ball.dy = collidePoint * 0.15;
             }
 
-            // Score points
+            // Scoring & Limit Check (Goal: 5 points)
             if (ball.x - ball.radius < 0) {
                 ai.score++;
-                resetBall();
+                checkWinCondition();
+                if (!isGameOver) resetBall();
             } else if (ball.x + ball.radius > canvas.width) {
                 player.score++;
-                resetBall();
+                checkWinCondition();
+                if (!isGameOver) resetBall();
+            }
+        }
+
+        function checkWinCondition() {
+            if (player.score >= 5 || ai.score >= 5) {
+                isGameOver = true;
+                const winnerName = player.score >= 5 ? "PLAYER 1 WINS!" : "PLAYER 2 WINS!";
+                document.getElementById("winnerText").innerText = winnerName;
+                document.getElementById("gameOverlay").style.display = "flex";
+
+                if (player.score >= 5) {
+                    winStreak++;
+                    localStorage.setItem("pong_streak", winStreak);
+                    updateHighScoreText();
+                }
             }
         }
 
@@ -165,8 +254,35 @@
             ball.dy = (Math.random() * 4) - 2;
         }
 
+        function resetGame() {
+            player.score = 0;
+            ai.score = 0;
+            isGameOver = false;
+            document.getElementById("gameOverlay").style.display = "none";
+            resetBall();
+        }
+
+        function updateHighScoreText() {
+            document.getElementById("highScoreDisplay").innerText = `Session Player Win Streak: ${winStreak}`;
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Move & render abstract floating background particles
+            ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
+            particles.forEach(p => {
+                p.x -= p.speed;
+                if (p.x < 0) p.x = canvas.width;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
         function drawNet() {
-            ctx.strokeStyle = "#334155";
+            ctx.strokeStyle = "#1e293b";
             ctx.setLineDash([4, 15]);
             ctx.beginPath();
             ctx.moveTo(canvas.width / 2, 0);
@@ -175,28 +291,33 @@
             ctx.setLineDash([]);
         }
 
-        function drawText(text, x, y, color, size = "30px") {
-            ctx.fillStyle = color;
-            ctx.font = `${size} 'Courier New', Courier, monospace`;
-            ctx.textAlign = "center";
-            ctx.fillText(text, x, y);
-        }
-
         function draw() {
-            ctx.fillStyle = "#020617";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+            drawBackground();
             drawNet();
 
-            drawText(player.score, canvas.width / 4, 50, "#38bdf8", "40px");
-            drawText(ai.score, (canvas.width / 4) * 3, 50, "#f43f5e", "40px");
+            // Render Player Names & Scores
+            ctx.font = "14px 'Courier New', Courier, monospace";
+            ctx.textAlign = "center";
+            
+            ctx.fillStyle = player.color;
+            ctx.fillText(player.name, canvas.width / 4, 30);
+            ctx.font = "36px 'Courier New', Courier, monospace";
+            ctx.fillText(player.score, canvas.width / 4, 75);
 
+            ctx.font = "14px 'Courier New', Courier, monospace";
+            ctx.fillStyle = ai.color;
+            ctx.fillText(ai.name, (canvas.width / 4) * 3, 30);
+            ctx.font = "36px 'Courier New', Courier, monospace";
+            ctx.fillText(ai.score, (canvas.width / 4) * 3, 75);
+
+            // Draw paddles
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
 
             ctx.fillStyle = ai.color;
             ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
 
+            // Draw ball
             ctx.fillStyle = ball.color;
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
