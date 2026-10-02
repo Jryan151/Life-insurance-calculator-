@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Bowman - Core Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Bowman - Vertical iOS</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none;
+            touch-action: none; /* Prevents mobile scrolling and zooming gestures */
         }
         body {
             background-color: #0f172a;
@@ -21,29 +21,40 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            position: fixed;
+            width: 100vw;
         }
         h1 {
-            margin-bottom: 5px;
-            font-size: 1.5rem;
+            margin-bottom: 2px;
+            font-size: 1.3rem;
             color: #38bdf8;
             letter-spacing: 2px;
         }
         .status-hud {
-            margin-bottom: 8px;
-            font-size: 0.9rem;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
             color: #94a3b8;
             text-align: center;
+            padding: 0 10px;
+        }
+        .canvas-container {
+            width: 92vw;
+            max-width: 420px;
+            aspect-ratio: 9 / 16; /* Perfect vertical phone proportion */
+            position: relative;
         }
         canvas {
             background: linear-gradient(to bottom, #020617, #1e293b);
             border: 3px solid #334155;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
             display: block;
         }
         .controls-hint {
-            margin-top: 10px;
-            font-size: 0.8rem;
+            margin-top: 8px;
+            font-size: 0.75rem;
             color: #64748b;
             text-align: center;
         }
@@ -51,12 +62,14 @@
 </head>
 <body>
 
-    <h1>BOWMAN DUEL</h1>
-    <div class="status-hud" id="hudText">Player 1's Turn: Drag to Aim, Release to Fire!</div>
+    <h1>BOWMAN VERTICAL</h1>
+    <div class="status-hud" id="hudText">Player 1's Turn: Drag & Release to Shoot!</div>
     
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    <div class="canvas-container">
+        <canvas id="gameCanvas" width="400" height="711"></canvas>
+    </div>
 
-    <div class="controls-hint">Hold & Drag Mouse/Finger anywhere to set Angle & Power</div>
+    <div class="controls-hint">Hold & Drag anywhere to aim trajectory</div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -64,30 +77,32 @@
 
         // Game State
         let turn = 1; // 1 for Player 1, 2 for Player 2
-        let wind = (Math.random() * 0.4) - 0.2; // Random wind factor
+        let wind = (Math.random() * 0.3) - 0.15; // Random wind factor
         let gameState = "AIMING"; // AIMING, FLYING, GAME_OVER
 
-        // Players
-        const p1 = { x: 100, y: 320, health: 100, color: "#38bdf8", score: 0 };
-        const p2 = { x: 700, y: 320, health: 100, color: "#f43f5e", score: 0 };
+        // Vertical Layout Positions (P1 at bottom, P2 at top)
+        const p1 = { x: 200, y: 600, health: 100, color: "#38bdf8" };
+        const p2 = { x: 200, y: 110, health: 100, color: "#f43f5e" };
 
         // Active Arrow in flight
         let arrow = { x: 0, y: 0, vx: 0, vy: 0, active: false };
 
-        // Aiming interaction inputs
+        // Aiming interaction inputs with scaling calculation for mobile viewports
         let isDragging = false;
         let dragStartX = 0;
         let dragStartY = 0;
         let currentDragX = 0;
         let currentDragY = 0;
 
-        // Input Listeners for Drag-to-Aim Mechanics
         canvas.addEventListener("pointerdown", (e) => {
             if (gameState !== "AIMING") return;
             isDragging = true;
             const rect = canvas.getBoundingClientRect();
-            dragStartX = e.clientX - rect.left;
-            dragStartY = e.clientY - rect.top;
+            const scaleX = 400 / rect.width;
+            const scaleY = 711 / rect.height;
+            
+            dragStartX = (e.clientX - rect.left) * scaleX;
+            dragStartY = (e.clientY - rect.top) * scaleY;
             currentDragX = dragStartX;
             currentDragY = dragStartY;
         });
@@ -95,21 +110,23 @@
         canvas.addEventListener("pointermove", (e) => {
             if (!isDragging) return;
             const rect = canvas.getBoundingClientRect();
-            currentDragX = e.clientX - rect.left;
-            currentDragY = e.clientY - rect.top;
+            const scaleX = 400 / rect.width;
+            const scaleY = 711 / rect.height;
+
+            currentDragX = (e.clientX - rect.left) * scaleX;
+            currentDragY = (e.clientY - rect.top) * scaleY;
         });
 
         canvas.addEventListener("pointerup", (e) => {
             if (!isDragging) return;
             isDragging = false;
 
-            // Calculate vector based on pull-back distance (Angle and Power)
             let shooter = turn === 1 ? p1 : p2;
             let dx = dragStartX - currentDragX; // Pulling back launches forward
             let dy = dragStartY - currentDragY;
 
             arrow.x = shooter.x;
-            arrow.y = shooter.y - 30; // Bowman chest height
+            arrow.y = shooter.y - 25;
             arrow.vx = dx * 0.12;
             arrow.vy = dy * 0.12;
             arrow.active = true;
@@ -127,26 +144,23 @@
             arrow.x += arrow.vx;
             arrow.y += arrow.vy;
 
-            // Ground collision boundary
-            if (arrow.y > 350) {
-                arrow.active = false;
-                checkHitOrMiss();
-            }
-
             // Screen boundary check
-            if (arrow.x < 0 || arrow.x > canvas.width || arrow.y < 0) {
+            if (arrow.x < 0 || arrow.x > 400 || arrow.y > 711 || arrow.y < 0) {
                 arrow.active = false;
-                switchTurn();
+                checkHitOrMiss(false);
+            } else {
+                // Check collision with opposing player
+                let target = turn === 1 ? p2 : p1;
+                let dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
+                if (dist < 20) {
+                    arrow.active = false;
+                    checkHitOrMiss(true, target);
+                }
             }
         }
 
-        function checkHitOrMiss() {
-            let target = turn === 1 ? p2 : p1;
-            
-            // Distance check to see if arrow hit target
-            let dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
-
-            if (dist < 25) {
+        function checkHitOrMiss(hit, target) {
+            if (hit) {
                 target.health -= 35;
                 if (target.health <= 0) {
                     target.health = 0;
@@ -156,7 +170,7 @@
                 }
                 document.getElementById("hudText").innerText = `Direct Hit! -35 HP`;
             } else {
-                document.getElementById("hudText").innerText = `Missed!`;
+                document.getElementById("hudText").innerText = `Missed / Out of Bounds!`;
             }
 
             setTimeout(switchTurn, 1500);
@@ -165,36 +179,37 @@
         function switchTurn() {
             if (gameState === "GAME_OVER") return;
             turn = turn === 1 ? 2 : 1;
-            wind = (Math.random() * 0.4) - 0.2; // New random wind
+            wind = (Math.random() * 0.3) - 0.15;
             gameState = "AIMING";
-            document.getElementById("hudText").innerText = `Player ${turn}'s Turn (Wind: ${wind > 0 ? 'East' : 'West'} ${(Math.abs(wind)*10).toFixed(1)})`;
+            document.getElementById("hudText").innerText = `Player ${turn}'s Turn (Wind: ${(wind * 10).toFixed(1)})`;
         }
 
         function drawScene() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, 400, 711);
 
-            // Draw Ground Terrain Line
-            ctx.strokeStyle = "#334155";
-            ctx.lineWidth = 4;
+            // Draw Central dividing canyon line or background separator
+            ctx.strokeStyle = "#1e293b";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(0, 350);
-            ctx.lineTo(canvas.width, 350);
+            ctx.moveTo(0, 711 / 2);
+            ctx.lineTo(400, 711 / 2);
             ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Draw Players (Stickman Archer style)
+            // Draw Players (P1 at bottom, P2 at top)
             drawArcher(p1.x, p1.y, p1.color, p1.health, "P1");
             drawArcher(p2.x, p2.y, p2.color, p2.health, "P2");
 
-            // Draw Aiming Vector Line (Bow pull-back preview)
+            // Draw Aiming Vector Line Preview
             if (isDragging && gameState === "AIMING") {
                 let shooter = turn === 1 ? p1 : p2;
                 ctx.strokeStyle = "#38bdf8";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(shooter.x, shooter.y - 30);
-                // Draw opposite vector line for arc preview
+                ctx.moveTo(shooter.x, shooter.y - 25);
                 let previewX = shooter.x - (currentDragX - dragStartX);
-                let previewY = shooter.y - 30 - (currentDragY - dragStartY);
+                let previewY = shooter.y - 25 - (currentDragY - dragStartY);
                 ctx.lineTo(previewX, previewY);
                 ctx.stroke();
             }
@@ -212,29 +227,28 @@
 
         function drawArcher(x, y, color, health, label) {
             ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2.5;
 
             // Head
             ctx.beginPath();
-            ctx.arc(x, y - 45, 10, 0, Math.PI * 2);
+            ctx.arc(x, y - 35, 8, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Body
+            // Body & Limbs
             ctx.beginPath();
-            ctx.moveTo(x, y - 35);
-            ctx.lineTo(x, y - 10);
-            // Legs
-            ctx.moveTo(x, y - 10);
-            ctx.lineTo(x - 12, y);
-            ctx.moveTo(x, y - 10);
-            ctx.lineTo(x + 12, y);
+            ctx.moveTo(x, y - 27);
+            ctx.lineTo(x, y - 8);
+            ctx.moveTo(x, y - 8);
+            ctx.lineTo(x - 10, y);
+            ctx.moveTo(x, y - 8);
+            ctx.lineTo(x + 10, y);
             ctx.stroke();
 
-            // Health bar above archer
+            // Health bar
             ctx.fillStyle = "#1e293b";
-            ctx.fillRect(x - 20, y - 70, 40, 6);
+            ctx.fillRect(x - 20, y - 55, 40, 5);
             ctx.fillStyle = color;
-            ctx.fillRect(x - 20, y - 70, (health / 100) * 40, 6);
+            ctx.fillRect(x - 20, y - 55, (health / 100) * 40, 5);
         }
 
         function gameLoop() {
