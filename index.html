@@ -113,27 +113,42 @@
             alert("Game link copied! Send it to your friend.");
         };
 
-        // Determine Player Role (First to open = P1, Second = P2)
-        let myPlayerNum = 1; 
+        // Determine Player Role & Room Sync (Robust handling)
+        let myPlayerNum = 1;
+        let roleAssigned = false;
         const roomRef = ref(db, 'rooms/' + roomId);
 
         onValue(roomRef, (snapshot) => {
             const data = snapshot.val();
+            
             if (!data) {
-                // Initialize room data if it doesn't exist
-                set(roomRef, {
-                    turn: 1,
-                    p1Health: 100,
-                    p2Health: 100,
-                    wind: 0.1,
-                    gameState: "WAITING",
-                    shotData: null
-                });
-                myPlayerNum = 1;
+                if (!roleAssigned) {
+                    myPlayerNum = 1;
+                    roleAssigned = true;
+                    set(roomRef, {
+                        turn: 1,
+                        p1Health: 100,
+                        p2Health: 100,
+                        wind: 0.1,
+                        gameState: "WAITING",
+                        p1Connected: true,
+                        p2Connected: false,
+                        shotData: null
+                    });
+                }
             } else {
-                if (!data.p2Connected && myPlayerNum !== 1) {
-                    update(roomRef, { p2Connected: true, gameState: "AIMING" });
-                    myPlayerNum = 2;
+                if (!roleAssigned) {
+                    if (!data.p2Connected) {
+                        myPlayerNum = 2;
+                        roleAssigned = true;
+                        update(roomRef, { 
+                            p2Connected: true, 
+                            gameState: "AIMING" 
+                        });
+                    } else {
+                        myPlayerNum = 2;
+                        roleAssigned = true;
+                    }
                 }
                 syncGameState(data);
             }
