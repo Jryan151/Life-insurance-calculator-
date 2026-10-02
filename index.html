@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Pong - Touch & Upgraded</title>
+    <title>Retro Pong - iOS Optimized</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none; /* Prevents default mobile scrolling/zooming gestures */
+            touch-action: none; /* Prevents unwanted iOS scrolling/zooming gestures */
         }
         body {
             background-color: #0f172a;
@@ -21,36 +21,42 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            position: fixed; /* Prevents rubber-band scrolling on iOS */
+            width: 100vw;
         }
         h1 {
-            margin-bottom: 5px;
-            font-size: 1.6rem;
+            margin-bottom: 3px;
+            font-size: 1.4rem;
             letter-spacing: 2px;
             color: #38bdf8;
         }
         .meta-info {
-            margin-bottom: 10px;
-            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
             color: #94a3b8;
         }
         .canvas-container {
             position: relative;
+            width: 94vw;
+            max-width: 800px;
+            aspect-ratio: 2 / 1; /* Keeps the game perfectly proportioned */
         }
         canvas {
             background-color: #020617;
-            border: 4px solid #334155;
+            border: 3px solid #334155;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
             display: block;
         }
-        /* Win state overlay card */
         #gameOverlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(2, 6, 23, 0.85);
+            background: rgba(2, 6, 23, 0.88);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -59,8 +65,8 @@
             z-index: 10;
         }
         #gameOverlay h2 {
-            font-size: 2.2rem;
-            margin-bottom: 15px;
+            font-size: 1.8rem;
+            margin-bottom: 12px;
             color: #f8fafc;
             text-align: center;
         }
@@ -68,22 +74,19 @@
             background-color: #38bdf8;
             color: #0f172a;
             border: none;
-            padding: 12px 28px;
+            padding: 10px 22px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-        #restartBtn:hover {
-            background-color: #7dd3fc;
         }
         .instructions {
-            margin-top: 12px;
-            font-size: 0.85rem;
+            margin-top: 10px;
+            font-size: 0.75rem;
             color: #94a3b8;
             text-align: center;
+            padding: 0 10px;
         }
     </style>
 </head>
@@ -100,7 +103,7 @@
         </div>
     </div>
 
-    <div class="instructions">Use <strong>W / S</strong>, <strong>Arrow Keys</strong>, or <strong>Touch & Drag</strong> to move</div>
+    <div class="instructions">Use Keyboard (W/S, Arrows) or Drag Finger on Screen</div>
 
     <script>
         const canvas = document.getElementById("pongCanvas");
@@ -111,10 +114,10 @@
         let winStreak = parseInt(localStorage.getItem("pong_streak")) || 0;
         updateHighScoreText();
 
-        // Game objects
+        // Game objects (based on internal 800x400 coordinate system)
         const player = {
             x: 20,
-            y: canvas.height / 2 - 40,
+            y: 400 / 2 - 40,
             width: 12,
             height: 80,
             score: 0,
@@ -124,8 +127,8 @@
         };
 
         const ai = {
-            x: canvas.width - 32,
-            y: canvas.height / 2 - 40,
+            x: 800 - 32,
+            y: 400 / 2 - 40,
             width: 12,
             height: 80,
             score: 0,
@@ -135,8 +138,8 @@
         };
 
         const ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
+            x: 800 / 2,
+            y: 400 / 2,
             radius: 8,
             speed: 5,
             dx: 5,
@@ -146,8 +149,8 @@
 
         // Live abstract background particles
         const particles = Array.from({ length: 35 }, () => ({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
+            x: Math.random() * 800,
+            y: Math.random() * 400,
             size: Math.random() * 2 + 1,
             speed: Math.random() * 0.5 + 0.2
         }));
@@ -157,20 +160,21 @@
         window.addEventListener("keydown", (e) => { keys[e.code] = true; });
         window.addEventListener("keyup", (e) => { keys[e.code] = false; });
 
-        // Touch controls support for iPad / mobile screens
+        // Accurate touch mapping scaling for iOS screen sizing
         canvas.addEventListener("touchmove", (e) => {
             if (isGameOver) return;
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-            const touchY = e.touches[0].clientY - rect.top;
             
-            // Center the paddle on the touch position vertically
+            // Calculate scale ratio between CSS display size and internal canvas coordinate size (800x400)
+            const scaleY = 400 / rect.height;
+            const touchY = (e.touches[0].clientY - rect.top) * scaleY;
+            
             player.y = touchY - player.height / 2;
 
-            // Keep player inside canvas boundaries
             if (player.y < 0) player.y = 0;
-            if (player.y + player.height > canvas.height) {
-                player.y = canvas.height - player.height;
+            if (player.y + player.height > 400) {
+                player.y = 400 - player.height;
             }
         }, { passive: false });
 
@@ -184,8 +188,8 @@
             }
 
             if (player.y < 0) player.y = 0;
-            if (player.y + player.height > canvas.height) {
-                player.y = canvas.height - player.height;
+            if (player.y + player.height > 400) {
+                player.y = 400 - player.height;
             }
         }
 
@@ -199,8 +203,8 @@
             }
 
             if (ai.y < 0) ai.y = 0;
-            if (ai.y + ai.height > canvas.height) {
-                ai.y = canvas.height - ai.height;
+            if (ai.y + ai.height > 400) {
+                ai.y = 400 - ai.height;
             }
         }
 
@@ -210,12 +214,10 @@
             ball.x += ball.dx;
             ball.y += ball.dy;
 
-            // Wall collisions
-            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > 400) {
                 ball.dy *= -1;
             }
 
-            // Player paddle collision
             if (
                 ball.x - ball.radius < player.x + player.width &&
                 ball.x + ball.radius > player.x &&
@@ -227,7 +229,6 @@
                 ball.dy = collidePoint * 0.15;
             }
 
-            // AI paddle collision
             if (
                 ball.x + ball.radius > ai.x &&
                 ball.x - ball.radius < ai.x + ai.width &&
@@ -239,12 +240,11 @@
                 ball.dy = collidePoint * 0.15;
             }
 
-            // Scoring & Limit Check (Goal: 5 points)
             if (ball.x - ball.radius < 0) {
                 ai.score++;
                 checkWinCondition();
                 if (!isGameOver) resetBall();
-            } else if (ball.x + ball.radius > canvas.width) {
+            } else if (ball.x + ball.radius > 800) {
                 player.score++;
                 checkWinCondition();
                 if (!isGameOver) resetBall();
@@ -267,15 +267,15 @@
         }
 
         function resetBall() {
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height / 2;
+            ball.x = 800 / 2;
+            ball.y = 400 / 2;
             ball.dx *= -1;
             ball.dy = (Math.random() * 4) - 2;
         }
 
         function resetGame() {
             player.score = 0;
-            ai.score =0;
+            ai.score = 0;
             isGameOver = false;
             document.getElementById("gameOverlay").style.display = "none";
             resetBall();
@@ -287,12 +287,12 @@
 
         function drawBackground() {
             ctx.fillStyle = "#020617";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 800, 400);
 
             ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
             particles.forEach(p => {
                 p.x -= p.speed;
-                if (p.x < 0) p.x = canvas.width;
+                if (p.x < 0) p.x = 800;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -303,8 +303,8 @@
             ctx.strokeStyle = "#1e293b";
             ctx.setLineDash([4, 15]);
             ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 0);
-            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.moveTo(800 / 2, 0);
+            ctx.lineTo(800 / 2, 400);
             ctx.stroke();
             ctx.setLineDash([]);
         }
@@ -317,15 +317,15 @@
             ctx.textAlign = "center";
             
             ctx.fillStyle = player.color;
-            ctx.fillText(player.name, canvas.width / 4, 30);
+            ctx.fillText(player.name, 800 / 4, 30);
             ctx.font = "36px 'Courier New', Courier, monospace";
-            ctx.fillText(player.score, canvas.width / 4, 75);
+            ctx.fillText(player.score, 800 / 4, 75);
 
             ctx.font = "14px 'Courier New', Courier, monospace";
             ctx.fillStyle = ai.color;
-            ctx.fillText(ai.name, (canvas.width / 4) * 3, 30);
+            ctx.fillText(ai.name, (800 / 4) * 3, 30);
             ctx.font = "36px 'Courier New', Courier, monospace";
-            ctx.fillText(ai.score, (canvas.width / 4) * 3, 75);
+            ctx.fillText(ai.score, (800 / 4) * 3, 75);
 
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
