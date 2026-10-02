@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Pong - Upgraded</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Pong - Touch & Upgraded</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            touch-action: none; /* Prevents default mobile scrolling/zooming gestures */
         }
         body {
             background-color: #0f172a;
@@ -67,7 +68,7 @@
             background-color: #38bdf8;
             color: #0f172a;
             border: none;
-            padding: 10px 24px;
+            padding: 12px 28px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 1rem;
             font-weight: bold;
@@ -82,6 +83,7 @@
             margin-top: 12px;
             font-size: 0.85rem;
             color: #94a3b8;
+            text-align: center;
         }
     </style>
 </head>
@@ -98,7 +100,7 @@
         </div>
     </div>
 
-    <div class="instructions">Use <strong>W / S</strong> or <strong>Up / Down Arrow Keys</strong> to move</div>
+    <div class="instructions">Use <strong>W / S</strong>, <strong>Arrow Keys</strong>, or <strong>Touch & Drag</strong> to move</div>
 
     <script>
         const canvas = document.getElementById("pongCanvas");
@@ -154,6 +156,23 @@
         const keys = {};
         window.addEventListener("keydown", (e) => { keys[e.code] = true; });
         window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+
+        // Touch controls support for iPad / mobile screens
+        canvas.addEventListener("touchmove", (e) => {
+            if (isGameOver) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touchY = e.touches[0].clientY - rect.top;
+            
+            // Center the paddle on the touch position vertically
+            player.y = touchY - player.height / 2;
+
+            // Keep player inside canvas boundaries
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+            }
+        }, { passive: false });
 
         function handleInput() {
             if (isGameOver) return;
@@ -256,7 +275,7 @@
 
         function resetGame() {
             player.score = 0;
-            ai.score = 0;
+            ai.score =0;
             isGameOver = false;
             document.getElementById("gameOverlay").style.display = "none";
             resetBall();
@@ -270,7 +289,6 @@
             ctx.fillStyle = "#020617";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Move & render abstract floating background particles
             ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
             particles.forEach(p => {
                 p.x -= p.speed;
@@ -295,7 +313,6 @@
             drawBackground();
             drawNet();
 
-            // Render Player Names & Scores
             ctx.font = "14px 'Courier New', Courier, monospace";
             ctx.textAlign = "center";
             
@@ -310,14 +327,12 @@
             ctx.font = "36px 'Courier New', Courier, monospace";
             ctx.fillText(ai.score, (canvas.width / 4) * 3, 75);
 
-            // Draw paddles
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
 
             ctx.fillStyle = ai.color;
             ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
 
-            // Draw ball
             ctx.fillStyle = ball.color;
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
