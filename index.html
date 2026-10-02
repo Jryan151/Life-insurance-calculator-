@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Bowman - Vertical iOS</title>
+    <title>Retro Bowman - Remote Multiplayer</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none; /* Prevents mobile scrolling and zooming gestures */
+            touch-action: none;
         }
         body {
             background-color: #0f172a;
@@ -26,7 +26,7 @@
         }
         h1 {
             margin-bottom: 2px;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             color: #38bdf8;
             letter-spacing: 2px;
         }
@@ -37,10 +37,16 @@
             text-align: center;
             padding: 0 10px;
         }
+        .room-info {
+            font-size: 0.75rem;
+            color: #38bdf8;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
         .canvas-container {
-            width: 92vw;
-            max-width: 420px;
-            aspect-ratio: 9 / 16; /* Perfect vertical phone proportion */
+            width: 90vw;
+            max-width: 380px;
+            aspect-ratio: 9 / 16;
             position: relative;
         }
         canvas {
@@ -54,7 +60,7 @@
         }
         .controls-hint {
             margin-top: 8px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #64748b;
             text-align: center;
         }
@@ -62,47 +68,102 @@
 </head>
 <body>
 
-    <h1>BOWMAN VERTICAL</h1>
-    <div class="status-hud" id="hudText">Player 1's Turn: Drag & Release to Shoot!</div>
+    <h1>BOWMAN ONLINE</h1>
+    <div class="room-info" id="roomInfo">Connecting to room...</div>
+    <div class="status-hud" id="hudText">Waiting for player connection...</div>
     
     <div class="canvas-container">
         <canvas id="gameCanvas" width="400" height="711"></canvas>
     </div>
 
-    <div class="controls-hint">Hold & Drag anywhere to aim trajectory</div>
+    <div class="controls-hint">Drag & Release to fire your turn</div>
 
-    <script>
+    <!-- Firebase SDK Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Your exact Firebase project configuration from the console
+        const firebaseConfig = {
+            apiKey: "AIzaSyAr9h0NLPquw-ejP0AdHN_pAPlSCBACBp8",
+            authDomain: "bowman-game.firebaseapp.com",
+            databaseURL: "https://bowman-game-default-rtdb.firebaseio.com",
+            projectId: "bowman-game",
+            storageBucket: "bowman-game.appspot.com",
+            messagingSenderId: "1077764467196",
+            appId: "1:1077764467196:web:9a1d0fc6a20cbd4254aa79",
+            measurementId: "G-ZR3F5OLJ87"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Room Setup from URL Parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        let roomId = urlParams.get("room");
+        
+        if (!roomId) {
+            roomId = "room_" + Math.random().toString(36).substring(2, 7);
+            window.history.replaceState({}, "", `?room=${roomId}`);
+        }
+        
+        document.getElementById("roomInfo").innerText = `Room Code: ${roomId} | Tap here to copy link`;
+        document.getElementById("roomInfo").onclick = () => {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Game link copied! Send it to your friend.");
+        };
+
+        // Determine Player Role (First to open = P1, Second = P2)
+        let myPlayerNum = 1; 
+        const roomRef = ref(db, 'rooms/' + roomId);
+
+        onValue(roomRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) {
+                // Initialize room data if it doesn't exist
+                set(roomRef, {
+                    turn: 1,
+                    p1Health: 100,
+                    p2Health: 100,
+                    wind: 0.1,
+                    gameState: "WAITING",
+                    shotData: null
+                });
+                myPlayerNum = 1;
+            } else {
+                if (!data.p2Connected && myPlayerNum !== 1) {
+                    update(roomRef, { p2Connected: true, gameState: "AIMING" });
+                    myPlayerNum = 2;
+                }
+                syncGameState(data);
+            }
+        });
+
+        // Canvas & Game Logic Setup
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Game State
-        let turn = 1; // 1 for Player 1, 2 for Player 2
-        let wind = (Math.random() * 0.3) - 0.15; // Random wind factor
-        let gameState = "AIMING"; // AIMING, FLYING, GAME_OVER
+        let remoteState = {
+            turn: 1,
+            p1Health: 100,
+            p2Health: 100,
+            wind: 0.1,
+            gameState: "WAITING"
+        };
 
-        // Vertical Layout Positions (P1 at bottom, P2 at top)
-        const p1 = { x: 200, y: 600, health: 100, color: "#38bdf8" };
-        const p2 = { x: 200, y: 110, health: 100, color: "#f43f5e" };
-
-        // Active Arrow in flight
+        const p1 = { x: 200, y: 600 };
+        const p2 = { x: 200, y: 110 };
         let arrow = { x: 0, y: 0, vx: 0, vy: 0, active: false };
 
-        // Aiming interaction inputs with scaling calculation for mobile viewports
         let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let currentDragX = 0;
-        let currentDragY = 0;
+        let dragStartX = 0, dragStartY = 0, currentDragX = 0, currentDragY = 0;
 
         canvas.addEventListener("pointerdown", (e) => {
-            if (gameState !== "AIMING") return;
+            if (remoteState.gameState !== "AIMING" || remoteState.turn !== myPlayerNum) return;
             isDragging = true;
             const rect = canvas.getBoundingClientRect();
-            const scaleX = 400 / rect.width;
-            const scaleY = 711 / rect.height;
-            
-            dragStartX = (e.clientX - rect.left) * scaleX;
-            dragStartY = (e.clientY - rect.top) * scaleY;
+            dragStartX = (e.clientX - rect.left) * (400 / rect.width);
+            dragStartY = (e.clientY - rect.top) * (711 / rect.height);
             currentDragX = dragStartX;
             currentDragY = dragStartY;
         });
@@ -110,111 +171,108 @@
         canvas.addEventListener("pointermove", (e) => {
             if (!isDragging) return;
             const rect = canvas.getBoundingClientRect();
-            const scaleX = 400 / rect.width;
-            const scaleY = 711 / rect.height;
-
-            currentDragX = (e.clientX - rect.left) * scaleX;
-            currentDragY = (e.clientY - rect.top) * scaleY;
+            currentDragX = (e.clientX - rect.left) * (400 / rect.width);
+            currentDragY = (e.clientY - rect.top) * (711 / rect.height);
         });
 
-        canvas.addEventListener("pointerup", (e) => {
+        canvas.addEventListener("pointerup", () => {
             if (!isDragging) return;
             isDragging = false;
 
-            let shooter = turn === 1 ? p1 : p2;
-            let dx = dragStartX - currentDragX; // Pulling back launches forward
-            let dy = dragStartY - currentDragY;
+            let shooter = myPlayerNum === 1 ? p1 : p2;
+            let vx = (dragStartX - currentDragX) * 0.12;
+            let vy = (dragStartY - currentDragY) * 0.12;
 
-            arrow.x = shooter.x;
-            arrow.y = shooter.y - 25;
-            arrow.vx = dx * 0.12;
-            arrow.vy = dy * 0.12;
-            arrow.active = true;
-            gameState = "FLYING";
-            document.getElementById("hudText").innerText = "Shot Fired!";
+            update(roomRef, {
+                gameState: "FLYING",
+                shotData: {
+                    startX: shooter.x,
+                    startY: shooter.y - 25,
+                    vx: vx,
+                    vy: vy,
+                    shooterNum: myPlayerNum
+                }
+            });
         });
+
+        function syncGameState(data) {
+            remoteState = data;
+            if (data.gameState === "FLYING" && data.shotData && !arrow.active) {
+                arrow.x = data.shotData.startX;
+                arrow.y = data.shotData.startY;
+                arrow.vx = data.shotData.vx;
+                arrow.vy = data.shotData.vy;
+                arrow.active = true;
+            }
+
+            if (data.gameState === "WAITING") {
+                document.getElementById("hudText").innerText = "Waiting for Player 2 to join...";
+            } else if (data.gameState === "AIMING") {
+                let isMyTurn = data.turn === myPlayerNum;
+                document.getElementById("hudText").innerText = isMyTurn ? "Your Turn to Aim & Shoot!" : `Waiting for Player ${data.turn}'s shot...`;
+            }
+        }
 
         function updatePhysics() {
             if (!arrow.active) return;
 
-            // Apply gravity and wind
-            arrow.vy += 0.25; 
-            arrow.vx += wind; 
-
+            arrow.vy += 0.25;
+            arrow.vx += remoteState.wind;
             arrow.x += arrow.vx;
             arrow.y += arrow.vy;
 
-            // Screen boundary check
-            if (arrow.x < 0 || arrow.x > 400 || arrow.y > 711 || arrow.y < 0) {
+            let targetPos = remoteState.turn === 1 ? p2 : p1;
+            
+            if (Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20) {
                 arrow.active = false;
-                checkHitOrMiss(false);
-            } else {
-                // Check collision with opposing player
-                let target = turn === 1 ? p2 : p1;
-                let dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
-                if (dist < 20) {
-                    arrow.active = false;
-                    checkHitOrMiss(true, target);
+                if (myPlayerNum === remoteState.turn) {
+                    let newP1Health = remoteState.turn === 1 ? remoteState.p1Health : remoteState.p1Health - 35;
+                    let newP2Health = remoteState.turn === 2 ? remoteState.p2Health : remoteState.p2Health - 35;
+                    let nextTurn = remoteState.turn === 1 ? 2 : 1;
+                    
+                    update(roomRef, {
+                        p1Health: Math.max(0, newP1Health),
+                        p2Health: Math.max(0, newP2Health),
+                        turn: nextTurn,
+                        gameState: "AIMING",
+                        wind: (Math.random() * 0.3) - 0.15
+                    });
+                }
+            } else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
+                arrow.active = false;
+                if (myPlayerNum === remoteState.turn) {
+                    let nextTurn = remoteState.turn === 1 ? 2 : 1;
+                    update(roomRef, {
+                        turn: nextTurn,
+                        gameState: "AIMING",
+                        wind: (Math.random() * 0.3) - 0.15
+                    });
                 }
             }
-        }
-
-        function checkHitOrMiss(hit, target) {
-            if (hit) {
-                target.health -= 35;
-                if (target.health <= 0) {
-                    target.health = 0;
-                    document.getElementById("hudText").innerText = `PLAYER ${turn} WINS THE MATCH!`;
-                    gameState = "GAME_OVER";
-                    return;
-                }
-                document.getElementById("hudText").innerText = `Direct Hit! -35 HP`;
-            } else {
-                document.getElementById("hudText").innerText = `Missed / Out of Bounds!`;
-            }
-
-            setTimeout(switchTurn, 1500);
-        }
-
-        function switchTurn() {
-            if (gameState === "GAME_OVER") return;
-            turn = turn === 1 ? 2 : 1;
-            wind = (Math.random() * 0.3) - 0.15;
-            gameState = "AIMING";
-            document.getElementById("hudText").innerText = `Player ${turn}'s Turn (Wind: ${(wind * 10).toFixed(1)})`;
         }
 
         function drawScene() {
             ctx.clearRect(0, 0, 400, 711);
 
-            // Draw Central dividing canyon line or background separator
             ctx.strokeStyle = "#1e293b";
-            ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(0, 711 / 2);
-            ctx.lineTo(400, 711 / 2);
-            ctx.stroke();
+            ctx.moveTo(0, 355); ctx.lineTo(400, 355); ctx.stroke();
             ctx.setLineDash([]);
 
-            // Draw Players (P1 at bottom, P2 at top)
-            drawArcher(p1.x, p1.y, p1.color, p1.health, "P1");
-            drawArcher(p2.x, p2.y, p2.color, p2.health, "P2");
+            drawArcher(p1.x, p1.y, "#38bdf8", remoteState.p1Health, "P1");
+            drawArcher(p2.x, p2.y, "#f43f5e", remoteState.p2Health, "P2");
 
-            // Draw Aiming Vector Line Preview
-            if (isDragging && gameState === "AIMING") {
-                let shooter = turn === 1 ? p1 : p2;
+            if (isDragging && remoteState.turn === myPlayerNum) {
+                let shooter = myPlayerNum === 1 ? p1 : p2;
                 ctx.strokeStyle = "#38bdf8";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(shooter.x, shooter.y - 25);
-                let previewX = shooter.x - (currentDragX - dragStartX);
-                let previewY = shooter.y - 25 - (currentDragY - dragStartY);
-                ctx.lineTo(previewX, previewY);
+                ctx.lineTo(shooter.x - (currentDragX - dragStartX), shooter.y - 25 - (currentDragY - dragStartY));
                 ctx.stroke();
             }
 
-            // Draw Flying Arrow
             if (arrow.active) {
                 ctx.strokeStyle = "#f8fafc";
                 ctx.lineWidth = 2;
@@ -228,27 +286,13 @@
         function drawArcher(x, y, color, health, label) {
             ctx.strokeStyle = color;
             ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.arc(x, y - 35, 8, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, y - 27); ctx.lineTo(x, y - 8);
+            ctx.moveTo(x, y - 8); ctx.lineTo(x - 10, y);
+            ctx.moveTo(x, y - 8); ctx.lineTo(x + 10, y); ctx.stroke();
 
-            // Head
-            ctx.beginPath();
-            ctx.arc(x, y - 35, 8, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Body & Limbs
-            ctx.beginPath();
-            ctx.moveTo(x, y - 27);
-            ctx.lineTo(x, y - 8);
-            ctx.moveTo(x, y - 8);
-            ctx.lineTo(x - 10, y);
-            ctx.moveTo(x, y - 8);
-            ctx.lineTo(x + 10, y);
-            ctx.stroke();
-
-            // Health bar
-            ctx.fillStyle = "#1e293b";
-            ctx.fillRect(x - 20, y - 55, 40, 5);
-            ctx.fillStyle = color;
-            ctx.fillRect(x - 20, y - 55, (health / 100) * 40, 5);
+            ctx.fillStyle = "#1e293b"; ctx.fillRect(x - 20, y - 55, 40, 5);
+            ctx.fillStyle = color; ctx.fillRect(x - 20, y - 55, (health / 100) * 40, 5);
         }
 
         function gameLoop() {
