@@ -2,422 +2,225 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bowman Retro - Arcade Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coverage Finder - DreamCatcher Financial</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none;
-            user-select: none;
         }
         body {
-            background-color: #050814;
+            background-color: #0b0f19;
             color: #f8fafc;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            overflow: hidden;
-            position: fixed;
-            width: 100vw;
+            padding: 20px;
         }
-        .screen {
+        .container {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        h2 {
+            font-size: 1.25rem;
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .question-text {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+        .options-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            gap: 12px;
+        }
+        button.option-btn {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.option-btn:hover {
+            background: #38bdf8;
+            color: #0b0f19;
+            border-color: #38bdf8;
+            font-weight: 600;
+        }
+        .result-box {
+            text-align: center;
+        }
+        .policy-tag {
+            font-size: 1.5rem;
+            color: #4ade80;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .result-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .cta-btn {
+            background: #38bdf8;
+            color: #0b0f19;
+            border: none;
             width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: linear-gradient(to bottom, #020617, #0f172a);
-            z-index: 10;
-            padding: 20px;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: display;
+        }
+        .cta-btn:hover {
+            background: #7dd3fc;
         }
         .hidden {
             display: none !important;
         }
-        h1 {
-            font-size: 2.2rem;
-            color: #38bdf8;
-            letter-spacing: 4px;
-            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
-            margin-bottom: 5px;
-            text-align: center;
-        }
-        .subtitle {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
-        .menu-box {
-            background: #090d19;
-            border: 2px solid #334155;
-            padding: 25px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        label {
-            font-size: 0.8rem;
-            color: #38bdf8;
-            letter-spacing: 1px;
-        }
-        input {
-            background: #1e293b;
-            border: 2px solid #475569;
-            color: #f8fafc;
-            padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
-            border-radius: 6px;
-            outline: none;
-            text-align: center;
-        }
-        input:focus {
-            border-color: #38bdf8;
-        }
-        button {
-            background: #38bdf8;
-            color: #020617;
-            border: none;
-            padding: 12px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            letter-spacing: 2px;
-            transition: background 0.2s, transform 0.1s;
-        }
-        button:hover {
-            background: #7dd3fc;
-            transform: scale(1.02);
-        }
-        /* Game HUD Layout */
-        .game-ui {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-        .hud-top {
-            width: 90vw;
-            max-width: 380px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-bottom: 6px;
-            padding: 0 4px;
-        }
-        .canvas-container {
-            width: 90vw;
-            max-width: 380px;
-            aspect-ratio: 9 / 16;
-            position: relative;
-        }
-        canvas {
-            background: linear-gradient(to bottom, #020617, #0f172a);
-            border: 3px solid #334155;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        .controls-hint {
-            margin-top: 8px;
-            font-size: 0.7rem;
+        .progress {
+            font-size: 0.75rem;
             color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
             text-align: center;
         }
-        .game-over-title {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .win-color { color: #4ade80; text-shadow: 0 0 15px rgba(74, 222, 128, 0.4); }
-        .lose-color { color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
     </style>
 </head>
 <body>
 
-    <!-- MAIN MENU SCREEN -->
-    <div id="menuScreen" class="screen">
-        <h1>BOWMAN</h1>
-        <div class="subtitle">RETRO ARCADE EDITION</div>
-        <div class="menu-box">
-            <label for="playerNameInput">ARCHER NAME:</label>
-            <input type="text" id="playerNameInput" value="PLAYER 1" maxlength="10">
-            <button id="startBtn">INSERT COIN</button>
-        </div>
-    </div>
-
-    <!-- GAME OVER SCREEN -->
-    <div id="gameOverScreen" class="screen hidden">
-        <div id="gameOverTitle" class="game-over-title">VICTORY</div>
-        <div class="subtitle" id="gameOverSub">CPU ELIMINATED</div>
-        <div class="menu-box" style="align-items: center;">
-            <button id="restartBtn">PLAY AGAIN</button>
-        </div>
-    </div>
-
-    <!-- GAME PLAY SCREEN -->
-    <div id="gameScreen" class="game-ui hidden">
-        <div class="hud-top">
-            <span id="p1HudLabel" style="color: #38bdf8;">PLAYER: 100HP</span>
-            <span id="windHud" style="color: #cbd5e1;">WIND: 0.0</span>
-            <span style="color: #f43f5e;">CPU: <span id="p2HudHp">100</span>HP</span>
-        </div>
+    <div class="container">
+        <div id="progressIndicator" class="progress">Step 1 of 3</div>
         
-        <div class="canvas-container">
-            <canvas id="gameCanvas" width="400" height="711"></canvas>
+        <!-- QUIZ SCREEN -->
+        <div id="quizScreen">
+            <h2 id="quizTitle">Find Your Ideal Coverage</h2>
+            <div id="questionText" class="question-text">Loading question...</div>
+            <div id="optionsGroup" class="options-group">
+                <!-- Dynamically injected buttons -->
+            </div>
         </div>
 
-        <div class="controls-hint" id="turnHint">Drag & Release to fire your turn</div>
+        <!-- RESULT SCREEN -->
+        <div id="resultScreen" class="result-box hidden">
+            <h2>Recommended For You</h2>
+            <div id="policyRecommendation" class="policy-tag">TERM LIFE INSURANCE</div>
+            <div id="policyDescription" class="result-desc">
+                Based on your goals, a Term policy provides the highest death benefit protection for the lowest initial cost during your family's core growing years.
+            </div>
+            <button class="cta-btn" onclick="alert('Redirecting to agent calendar or lead form!')">BOOK YOUR FREE CONSULTATION</button>
+        </div>
     </div>
 
     <script>
-        const menuScreen = document.getElementById("menuScreen");
-        const gameOverScreen = document.getElementById("gameOverScreen");
-        const gameScreen = document.getElementById("gameScreen");
-        const startBtn = document.getElementById("startBtn");
-        const restartBtn = document.getElementById("restartBtn");
-        const playerNameInput = document.getElementById("playerNameInput");
-        
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const questions = [
+            {
+                title: "Primary Objective",
+                text: "What is your main financial priority right now?",
+                options: [
+                    { text: "Protecting my family/mortgage if something happens to me", score: "TERM" },
+                    { text: "Building tax-advantaged cash value alongside death benefit", score: "IUL" },
+                    { text: "Covering final end-of-life and funeral expenses", score: "FINAL" }
+                ]
+            },
+            {
+                title: "Time Horizon",
+                text: "How long do you need this specific layer of coverage to last?",
+                options: [
+                    { text: "A specific window (e.g., 10, 20, or 30 years until retirement/kids grow up)", score: "TERM" },
+                    { text: "For the rest of my life with potential cash growth", score: "IUL" },
+                    { text: "Lifelong coverage with guaranteed level premiums", score: "FINAL" }
+                ]
+            },
+            {
+                title: "Budget & Growth Preference",
+                text: "Which statement best describes your budget approach?",
+                options: [
+                    { text: "Maximum coverage for the lowest current monthly investment", score: "TERM" },
+                    { text: "Interested in linking cash value performance to market indexes safely", score: "IUL" },
+                    { text: "Simple, predictable permanent coverage that never expires", score: "FINAL" }
+                ]
+            }
+        ];
 
-        let playerName = "PLAYER 1";
-        let turn = 1; // 1 = Player, 2 = AI
-        let p1Health = 100;
-        let p2Health = 100;
-        let wind = 0.1;
-        let gameState = "AIMING"; // AIMING, FLYING, GAMEOVER
+        let currentStep = 0;
+        let scores = { TERM: 0, IUL: 0, FINAL: 0 };
 
-        const p1 = { x: 200, y: 600 };
-        const p2 = { x: 200, y: 110 };
-        let arrow = { x: 0, y: 0, vx: 0, vy: 0, active: false };
+        const progressIndicator = document.getElementById("progressIndicator");
+        const quizTitle = document.getElementById("quizTitle");
+        const questionText = document.getElementById("questionText");
+        const optionsGroup = document.getElementById("optionsGroup");
+        const quizScreen = document.getElementById("quizScreen");
+        const resultScreen = document.getElementById("resultScreen");
 
-        let isDragging = false;
-        let dragStartX = 0, dragStartY = 0, currentDragX = 0, currentDragY = 0;
+        function loadQuestion() {
+            if (currentStep >= questions.length) {
+                showResult();
+                return;
+            }
 
-        startBtn.onclick = () => {
-            let val = playerNameInput.value.trim();
-            if (val) playerName = val.toUpperCase();
-            document.getElementById("p1HudLabel").innerText = `${playerName}: 100HP`;
+            let q = questions[currentStep];
+            progressIndicator.innerText = `Step ${currentStep + 1} of ${questions.length}`;
+            quizTitle.innerText = q.title;
+            questionText.innerText = q.text;
+            optionsGroup.innerHTML = "";
+
+            q.options.forEach(opt => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt.text;
+                btn.onclick = () => {
+                    scores[opt.score]++;
+                    currentStep++;
+                    loadQuestion();
+                };
+                optionsGroup.appendChild(btn);
+            });
+        }
+
+        function showResult() {
+            quizScreen.classList.add("hidden");
+            resultScreen.classList.remove("hidden");
+
+            // Find highest scoring category
+            let bestMatch = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
             
-            menuScreen.classList.add("hidden");
-            gameScreen.classList.remove("hidden");
-            resetGame();
-        };
+            let recEl = document.getElementById("policyRecommendation");
+            let descEl = document.getElementById("policyDescription");
 
-        restartBtn.onclick = () => {
-            gameOverScreen.classList.add("hidden");
-            gameScreen.classList.remove("hidden");
-            resetGame();
-        };
-
-        function resetGame() {
-            p1Health = 100;
-            p2Health = 100;
-            turn = 1;
-            gameState = "AIMING";
-            arrow.active = false;
-            wind = Number(((Math.random() * 0.4) - 0.2).toFixed(2));
-            updateHUD();
-        }
-
-        // Touch / Mouse Controls for Player
-        canvas.addEventListener("pointerdown", (e) => {
-            if (gameState !== "AIMING" || turn !== 1) return;
-            isDragging = true;
-            const rect = canvas.getBoundingClientRect();
-            dragStartX = (e.clientX - rect.left) * (400 / rect.width);
-            dragStartY = (e.clientY - rect.top) * (711 / rect.height);
-            currentDragX = dragStartX;
-            currentDragY = dragStartY;
-        });
-
-        canvas.addEventListener("pointermove", (e) => {
-            if (!isDragging) return;
-            const rect = canvas.getBoundingClientRect();
-            currentDragX = (e.clientX - rect.left) * (400 / rect.width);
-            currentDragY = (e.clientY - rect.top) * (711 / rect.height);
-        });
-
-        canvas.addEventListener("pointerup", () => {
-            if (!isDragging) return;
-            isDragging = false;
-
-            let vx = (dragStartX - currentDragX) * 0.12;
-            let vy = (dragStartY - currentDragY) * 0.12;
-
-            fireArrow(p1.x, p1.y - 25, vx, vy);
-        });
-
-        function fireArrow(startX, startY, vx, vy) {
-            arrow.x = startX;
-            arrow.y = startY;
-            arrow.vx = vx;
-            arrow.vy = vy;
-            arrow.active = true;
-            gameState = "FLYING";
-            document.getElementById("turnHint").innerText = "Arrow in flight...";
-        }
-
-        // Automated AI Turn Logic
-        function triggerAITurn() {
-            document.getElementById("turnHint").innerText = "CPU is calculating shot...";
-            setTimeout(() => {
-                if (gameState === "GAMEOVER") return;
-                
-                // AI calculates trajectory toward P1 with slight natural error margin
-                let targetX = p1.x + (Math.random() * 20 - 10);
-                let targetY = p1.y - 25;
-                
-                // Estimate angle & power needed
-                let dx = p2.x - targetX;
-                let dy = p2.y - targetY;
-                
-                // Approximate arc vector for CPU difficulty
-                let vx = (Math.random() * 6 - 3);
-                let vy = -(12 + Math.random() * 5);
-                
-                fireArrow(p2.x, p2.y - 25, vx, vy);
-            }, 1000);
-        }
-
-        function updatePhysics() {
-            if (!arrow.active) return;
-
-            arrow.vy += 0.25;
-            arrow.vx += wind;
-            arrow.x += arrow.vx;
-            arrow.y += arrow.vy;
-
-            let targetPos = turn === 1 ? p2 : p1;
-            let isHit = Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20;
-            let isOutOfBounds = arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400;
-
-            if (isHit || isOutOfBounds) {
-                arrow.active = false;
-
-                if (isHit) {
-                    if (turn === 1) p2Health = Math.max(0, p2Health - 35);
-                    else p1Health = Math.max(0, p1Health - 35);
-                }
-
-                updateHUD();
-
-                if (p1Health <= 0 || p2Health <= 0) {
-                    triggerGameOver(p1Health > 0);
-                } else {
-                    turn = turn === 1 ? 2 : 1;
-                    wind = Number(((Math.random() * 0.4) - 0.2).toFixed(2));
-                    gameState = "AIMING";
-                    
-                    if (turn === 1) {
-                        document.getElementById("turnHint").innerText = "Your Turn to Aim & Shoot!";
-                    } else {
-                        triggerAITurn();
-                    }
-                }
-            }
-        }
-
-        function updateHUD() {
-            document.getElementById("p1HudLabel").innerText = `${playerName}: ${p1Health}HP`;
-            document.getElementById("p2HudHp").innerText = p2Health;
-            document.getElementById("windHud").innerText = `WIND: ${wind > 0 ? "+" : ""}${wind}`;
-        }
-
-        function triggerGameOver(playerWon) {
-            gameState = "GAMEOVER";
-            gameScreen.classList.add("hidden");
-            gameOverScreen.classList.remove("hidden");
-
-            const titleEl = document.getElementById("gameOverTitle");
-            const subEl = document.getElementById("gameOverSub");
-
-            if (playerWon) {
-                titleEl.innerText = "VICTORY!";
-                titleEl.className = "game-over-title win-color";
-                subEl.innerText = "CPU BOWMAN DESTROYED";
+            if (bestMatch === "TERM") {
+                recEl.innerText = "TERM LIFE INSURANCE";
+                descEl.innerText = "Ideal for your current stage. It provides high-limit income and debt protection at an affordable rate during your peak earning and family-raising years.";
+            } else if (bestMatch === "IUL") {
+                recEl.innerText = "INDEXED UNIVERSAL LIFE (IUL)";
+                descEl.innerText = "Best aligned with your wealth-building goals. It offers permanent lifelong protection combined with cash value growth tied to market indices with downside floor protection.";
             } else {
-                titleEl.innerText = "DEFEAT";
-                titleEl.className = "game-over-title lose-color";
-                subEl.innerText = "YOU WERE ELIMINATED";
+                recEl.innerText = "FINAL EXPENSE INSURANCE";
+                descEl.innerText = "Tailored for lifelong peace of mind, ensuring final arrangements and medical bills are completely covered without burdening loved ones.";
             }
         }
 
-        function drawScene() {
-            ctx.clearRect(0, 0, 400, 711);
-
-            // Center grid divider line
-            ctx.strokeStyle = "#1e293b";
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(0, 355); ctx.lineTo(400, 355); ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Draw Archers
-            drawArcher(p1.x, p1.y, "#38bdf8", p1Health);
-            drawArcher(p2.x, p2.y, "#f43f5e", p2Health);
-
-            // Draw Aiming Drag Line for Player
-            if (isDragging && turn === 1 && gameState === "AIMING") {
-                ctx.strokeStyle = "#38bdf8";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y - 25);
-                ctx.lineTo(p1.x - (currentDragX - dragStartX), p1.y - 25 - (currentDragY - dragStartY));
-                ctx.stroke();
-            }
-
-            // Draw Flying Arrow
-            if (arrow.active) {
-                ctx.strokeStyle = "#f8fafc";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(arrow.x, arrow.y);
-                ctx.lineTo(arrow.x - arrow.vx * 2, arrow.y - arrow.vy * 2);
-                ctx.stroke();
-            }
-        }
-
-        function drawArcher(x, y, color, health) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.arc(x, y - 35, 8, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x, y - 27); ctx.lineTo(x, y - 8);
-            ctx.moveTo(x, y - 8); ctx.lineTo(x - 10, y);
-            ctx.moveTo(x, y - 8); ctx.lineTo(x + 10, y); ctx.stroke();
-
-            ctx.fillStyle = "#1e293b"; ctx.fillRect(x - 20, y - 55, 40, 5);
-            ctx.fillStyle = color; ctx.fillRect(x - 20, y - 55, (health / 100) * 40, 5);
-        }
-
-        function gameLoop() {
-            updatePhysics();
-            drawScene();
-            requestAnimationFrame(gameLoop);
-        }
-
-        gameLoop();
+        loadQuestion();
     </script>
 </body>
 </html>
