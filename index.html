@@ -81,7 +81,7 @@
     <!-- Firebase SDK Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAr9h0NLPquw-ejP0AdHN_pAPlSCBACBp8",
@@ -115,13 +115,11 @@
         let myPlayerNum = null;
         let initialized = false;
 
-        // Bulletproof non-blocking listener initialization
         onValue(roomRef, (snapshot) => {
             const data = snapshot.val();
             
             if (!initialized) {
                 if (!data) {
-                    // Room doesn't exist -> Claim P1 and create it
                     myPlayerNum = 1;
                     initialized = true;
                     set(roomRef, {
@@ -132,10 +130,10 @@
                         gameState: "AIMING",
                         p1Connected: true,
                         p2Connected: false,
-                        shotData: null
+                        shotData: null,
+                        shotProcessed: false
                     });
                 } else {
-                    // Room exists -> Claim P2 and mark connected
                     myPlayerNum = 2;
                     initialized = true;
                     update(roomRef, {
@@ -159,7 +157,8 @@
             p2Health: 100,
             wind: 0.1,
             gameState: "AIMING",
-            p2Connected: false
+            p2Connected: false,
+            shotProcessed: false
         };
 
         const p1 = { x: 200, y: 600 };
@@ -196,6 +195,7 @@
 
             update(roomRef, {
                 gameState: "FLYING",
+                shotProcessed: false, // Reset lock for new shot
                 shotData: {
                     startX: shooter.x,
                     startY: shooter.y - 25,
@@ -219,8 +219,8 @@
             if (!data.p2Connected) {
                 document.getElementById("hudText").innerText = `You are P${myPlayerNum}. Waiting for Player 2...`;
             } else if (remoteState.gameState === "AIMING") {
-                let isMyTurn = data.turn === myPlayerNum;
-                document.getElementById("hudText").innerText = isMyTurn ? "Your Turn to Aim & Shoot!" : `Waiting for P${data.turn}'s shot...`;
+                let isMyTrust = data.turn === myPlayerNum;
+                document.getElementById("hudText").innerText = isMyTrust ? "Your Turn to Aim & Shoot!" : `Waiting for P${data.turn}'s shot...`;
             } else if (remoteState.gameState === "FLYING") {
                 document.getElementById("hudText").innerText = "Arrow in flight...";
             }
@@ -236,33 +236,35 @@
 
             let targetPos = remoteState.turn === 1 ? p2 : p1;
             
-            if (Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20) {
+            // Check if hit target or went out of bounds, and ensure shotProcessed is false to prevent double execution
+            let isHit = Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20;
+            let isOutOfBounds = arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400;
+
+            if ((isHit || isOutOfBounds) && !remoteState.shotProcessed) {
                 arrow.active = false;
-                if (myPlayerNum === remoteState.turn) {
-                    let newP1Health = remoteState.turn === 1 ? remoteState.p1Health : remoteState.p1Health - 35;
-                    let newP2Health = remoteState.turn === 2 ? remoteState.p2Health : remoteState.p2Health - 35;
-                    let nextTurn = remoteState.turn === 1 ? 2 : 1;
-                    
-                    update(roomRef, {
-                        p1Health: Math.max(0, newP1Health),
-                        p2Health: Math.max(0, newP2Health),
-                        turn: nextTurn,
-                        gameState: "AIMING",
-                        wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
-                        shotData: null
-                    });
+
+                // Immediately lock database transaction so other client can't process it
+                update(roomRef, { shotProcessed: true });
+
+                let newP1Health = remoteState.p1Health;
+                let newP2Health = remoteState.p2Health;
+
+                if (isHit) {
+                    if (remoteState.turn === 1) newP2Health = Math.max(0, newP2Health - 35);
+                    else newP1Health = Math.max(0, newP1Health - 35);
                 }
-            } else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
-                arrow.active = false;
-                if (myPlayerNum === remoteState.turn) {
-                    let nextTurn = remoteState.turn === 1 ? 2 : 1;
-                    update(roomRef, {
-                        turn: nextTurn,
-                        gameState: "AIMING",
-                        wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
-                        shotData: null
-                    });
-                }
+
+                let nextTurn = remoteState.turn === 1 ? 2 : 1;
+
+                update(roomRef, {
+                    p1Health: newP1Health,
+                    p2Health: newP2Health,
+                    turn: nextTurn,
+                    gameState: "AIMING",
+                    wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
+                    shotData: null,
+                    shotProcessed: true
+                });
             }
         }
 
