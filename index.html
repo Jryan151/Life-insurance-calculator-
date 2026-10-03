@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Bowman - Remote Multiplayer</title>
+    <title>Bowman Retro - Arcade Edition</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             touch-action: none;
+            user-select: none;
         }
         body {
-            background-color: #0f172a;
+            background-color: #050814;
             color: #f8fafc;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
@@ -24,24 +25,103 @@
             position: fixed;
             width: 100vw;
         }
+        .screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(to bottom, #020617, #0f172a);
+            z-index: 10;
+            padding: 20px;
+        }
+        .hidden {
+            display: none !important;
+        }
         h1 {
-            margin-bottom: 2px;
-            font-size: 1.2rem;
+            font-size: 2.2rem;
             color: #38bdf8;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
             letter-spacing: 2px;
         }
-        .status-hud {
-            margin-bottom: 6px;
+        .menu-box {
+            background: #090d19;
+            border: 2px solid #334155;
+            padding: 25px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-size: 0.8rem;
+            color: #38bdf8;
+            letter-spacing: 1px;
+        }
+        input {
+            background: #1e293b;
+            border: 2px solid #475569;
+            color: #f8fafc;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            border-radius: 6px;
+            outline: none;
+            text-align: center;
+        }
+        input:focus {
+            border-color: #38bdf8;
+        }
+        button {
+            background: #38bdf8;
+            color: #020617;
+            border: none;
+            padding: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: #7dd3fc;
+            transform: scale(1.02);
+        }
+        /* Game HUD Layout */
+        .game-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        .hud-top {
+            width: 90vw;
+            max-width: 380px;
+            display: flex;
+            justify-content: space-between;
             font-size: 0.8rem;
             color: #94a3b8;
-            text-align: center;
-            padding: 0 10px;
-        }
-        .room-info {
-            font-size: 0.75rem;
-            color: #38bdf8;
             margin-bottom: 6px;
-            cursor: pointer;
+            padding: 0 4px;
         }
         .canvas-container {
             width: 90vw;
@@ -50,7 +130,7 @@
             position: relative;
         }
         canvas {
-            background: linear-gradient(to bottom, #020617, #1e293b);
+            background: linear-gradient(to bottom, #020617, #0f172a);
             border: 3px solid #334155;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -64,102 +144,69 @@
             color: #64748b;
             text-align: center;
         }
+        .game-over-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .win-color { color: #4ade80; text-shadow: 0 0 15px rgba(74, 222, 128, 0.4); }
+        .lose-color { color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
     </style>
 </head>
 <body>
 
-    <h1>BOWMAN ONLINE</h1>
-    <div class="room-info" id="roomInfo">Connecting to room...</div>
-    <div class="status-hud" id="hudText">Connecting to server...</div>
-    
-    <div class="canvas-container">
-        <canvas id="gameCanvas" width="400" height="711"></canvas>
+    <!-- MAIN MENU SCREEN -->
+    <div id="menuScreen" class="screen">
+        <h1>BOWMAN</h1>
+        <div class="subtitle">RETRO ARCADE EDITION</div>
+        <div class="menu-box">
+            <label for="playerNameInput">ARCHER NAME:</label>
+            <input type="text" id="playerNameInput" value="PLAYER 1" maxlength="10">
+            <button id="startBtn">INSERT COIN</button>
+        </div>
     </div>
 
-    <div class="controls-hint">Drag & Release to fire your turn</div>
+    <!-- GAME OVER SCREEN -->
+    <div id="gameOverScreen" class="screen hidden">
+        <div id="gameOverTitle" class="game-over-title">VICTORY</div>
+        <div class="subtitle" id="gameOverSub">CPU ELIMINATED</div>
+        <div class="menu-box" style="align-items: center;">
+            <button id="restartBtn">PLAY AGAIN</button>
+        </div>
+    </div>
 
-    <!-- Firebase SDK Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAr9h0NLPquw-ejP0AdHN_pAPlSCBACBp8",
-            authDomain: "bowman-game.firebaseapp.com",
-            databaseURL: "https://bowman-game-default-rtdb.firebaseio.com",
-            projectId: "bowman-game",
-            storageBucket: "bowman-game.appspot.com",
-            messagingSenderId: "1077764467196",
-            appId: "1:1077764467196:web:9a1d0fc6a20cbd4254aa79",
-            measurementId: "G-ZR3F5OLJ87"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get("room");
+    <!-- GAME PLAY SCREEN -->
+    <div id="gameScreen" class="game-ui hidden">
+        <div class="hud-top">
+            <span id="p1HudLabel" style="color: #38bdf8;">PLAYER: 100HP</span>
+            <span id="windHud" style="color: #cbd5e1;">WIND: 0.0</span>
+            <span style="color: #f43f5e;">CPU: <span id="p2HudHp">100</span>HP</span>
+        </div>
         
-        if (!roomId) {
-            roomId = "room_" + Math.random().toString(36).substring(2, 7);
-            window.history.replaceState({}, "", `?room=${roomId}`);
-        }
+        <div class="canvas-container">
+            <canvas id="gameCanvas" width="400" height="711"></canvas>
+        </div>
+
+        <div class="controls-hint" id="turnHint">Drag & Release to fire your turn</div>
+    </div>
+
+    <script>
+        const menuScreen = document.getElementById("menuScreen");
+        const gameOverScreen = document.getElementById("gameOverScreen");
+        const gameScreen = document.getElementById("gameScreen");
+        const startBtn = document.getElementById("startBtn");
+        const restartBtn = document.getElementById("restartBtn");
+        const playerNameInput = document.getElementById("playerNameInput");
         
-        document.getElementById("roomInfo").innerText = `Room Code: ${roomId} | Tap here to copy link`;
-        document.getElementById("roomInfo").onclick = () => {
-            navigator.clipboard.writeText(window.location.href);
-            alert("Game link copied! Send it to your friend.");
-        };
-
-        const roomRef = ref(db, 'rooms/' + roomId);
-        let myPlayerNum = null;
-        let initialized = false;
-
-        onValue(roomRef, (snapshot) => {
-            const data = snapshot.val();
-            
-            if (!initialized) {
-                if (!data) {
-                    myPlayerNum = 1;
-                    initialized = true;
-                    set(roomRef, {
-                        turn: 1,
-                        p1Health: 100,
-                        p2Health: 100,
-                        wind: 0.1,
-                        gameState: "AIMING",
-                        p1Connected: true,
-                        p2Connected: false,
-                        shotData: null,
-                        shotProcessed: false
-                    });
-                } else {
-                    myPlayerNum = 2;
-                    initialized = true;
-                    update(roomRef, {
-                        p2Connected: true
-                    });
-                }
-            }
-            
-            if (data) {
-                syncGameState(data);
-            }
-        });
-
-        // Canvas & Game Logic Setup
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let remoteState = {
-            turn: 1,
-            p1Health: 100,
-            p2Health: 100,
-            wind: 0.1,
-            gameState: "AIMING",
-            p2Connected: false,
-            shotProcessed: false
-        };
+        let playerName = "PLAYER 1";
+        let turn = 1; // 1 = Player, 2 = AI
+        let p1Health = 100;
+        let p2Health = 100;
+        let wind = 0.1;
+        let gameState = "AIMING"; // AIMING, FLYING, GAMEOVER
 
         const p1 = { x: 200, y: 600 };
         const p2 = { x: 200, y: 110 };
@@ -168,8 +215,35 @@
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0, currentDragX = 0, currentDragY = 0;
 
+        startBtn.onclick = () => {
+            let val = playerNameInput.value.trim();
+            if (val) playerName = val.toUpperCase();
+            document.getElementById("p1HudLabel").innerText = `${playerName}: 100HP`;
+            
+            menuScreen.classList.add("hidden");
+            gameScreen.classList.remove("hidden");
+            resetGame();
+        };
+
+        restartBtn.onclick = () => {
+            gameOverScreen.classList.add("hidden");
+            gameScreen.classList.remove("hidden");
+            resetGame();
+        };
+
+        function resetGame() {
+            p1Health = 100;
+            p2Health = 100;
+            turn = 1;
+            gameState = "AIMING";
+            arrow.active = false;
+            wind = Number(((Math.random() * 0.4) - 0.2).toFixed(2));
+            updateHUD();
+        }
+
+        // Touch / Mouse Controls for Player
         canvas.addEventListener("pointerdown", (e) => {
-            if (!remoteState.p2Connected || remoteState.gameState !== "AIMING" || remoteState.turn !== myPlayerNum) return;
+            if (gameState !== "AIMING" || turn !== 1) return;
             isDragging = true;
             const rect = canvas.getBoundingClientRect();
             dragStartX = (e.clientX - rect.left) * (400 / rect.width);
@@ -189,107 +263,132 @@
             if (!isDragging) return;
             isDragging = false;
 
-            let shooter = myPlayerNum === 1 ? p1 : p2;
             let vx = (dragStartX - currentDragX) * 0.12;
             let vy = (dragStartY - currentDragY) * 0.12;
 
-            update(roomRef, {
-                gameState: "FLYING",
-                shotProcessed: false, // Reset lock for new shot
-                shotData: {
-                    startX: shooter.x,
-                    startY: shooter.y - 25,
-                    vx: vx,
-                    vy: vy,
-                    shooterNum: myPlayerNum
-                }
-            });
+            fireArrow(p1.x, p1.y - 25, vx, vy);
         });
 
-        function syncGameState(data) {
-            remoteState = data;
-            if (data.gameState === "FLYING" && data.shotData && !arrow.active) {
-                arrow.x = data.shotData.startX;
-                arrow.y = data.shotData.startY;
-                arrow.vx = data.shotData.vx;
-                arrow.vy = data.shotData.vy;
-                arrow.active = true;
-            }
+        function fireArrow(startX, startY, vx, vy) {
+            arrow.x = startX;
+            arrow.y = startY;
+            arrow.vx = vx;
+            arrow.vy = vy;
+            arrow.active = true;
+            gameState = "FLYING";
+            document.getElementById("turnHint").innerText = "Arrow in flight...";
+        }
 
-            if (!data.p2Connected) {
-                document.getElementById("hudText").innerText = `You are P${myPlayerNum}. Waiting for Player 2...`;
-            } else if (remoteState.gameState === "AIMING") {
-                let isMyTrust = data.turn === myPlayerNum;
-                document.getElementById("hudText").innerText = isMyTrust ? "Your Turn to Aim & Shoot!" : `Waiting for P${data.turn}'s shot...`;
-            } else if (remoteState.gameState === "FLYING") {
-                document.getElementById("hudText").innerText = "Arrow in flight...";
-            }
+        // Automated AI Turn Logic
+        function triggerAITurn() {
+            document.getElementById("turnHint").innerText = "CPU is calculating shot...";
+            setTimeout(() => {
+                if (gameState === "GAMEOVER") return;
+                
+                // AI calculates trajectory toward P1 with slight natural error margin
+                let targetX = p1.x + (Math.random() * 20 - 10);
+                let targetY = p1.y - 25;
+                
+                // Estimate angle & power needed
+                let dx = p2.x - targetX;
+                let dy = p2.y - targetY;
+                
+                // Approximate arc vector for CPU difficulty
+                let vx = (Math.random() * 6 - 3);
+                let vy = -(12 + Math.random() * 5);
+                
+                fireArrow(p2.x, p2.y - 25, vx, vy);
+            }, 1000);
         }
 
         function updatePhysics() {
             if (!arrow.active) return;
 
             arrow.vy += 0.25;
-            arrow.vx += remoteState.wind;
+            arrow.vx += wind;
             arrow.x += arrow.vx;
             arrow.y += arrow.vy;
 
-            let targetPos = remoteState.turn === 1 ? p2 : p1;
-            
-            // Check if hit target or went out of bounds, and ensure shotProcessed is false to prevent double execution
+            let targetPos = turn === 1 ? p2 : p1;
             let isHit = Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20;
             let isOutOfBounds = arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400;
 
-            if ((isHit || isOutOfBounds) && !remoteState.shotProcessed) {
+            if (isHit || isOutOfBounds) {
                 arrow.active = false;
 
-                // Immediately lock database transaction so other client can't process it
-                update(roomRef, { shotProcessed: true });
-
-                let newP1Health = remoteState.p1Health;
-                let newP2Health = remoteState.p2Health;
-
                 if (isHit) {
-                    if (remoteState.turn === 1) newP2Health = Math.max(0, newP2Health - 35);
-                    else newP1Health = Math.max(0, newP1Health - 35);
+                    if (turn === 1) p2Health = Math.max(0, p2Health - 35);
+                    else p1Health = Math.max(0, p1Health - 35);
                 }
 
-                let nextTurn = remoteState.turn === 1 ? 2 : 1;
+                updateHUD();
 
-                update(roomRef, {
-                    p1Health: newP1Health,
-                    p2Health: newP2Health,
-                    turn: nextTurn,
-                    gameState: "AIMING",
-                    wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
-                    shotData: null,
-                    shotProcessed: true
-                });
+                if (p1Health <= 0 || p2Health <= 0) {
+                    triggerGameOver(p1Health > 0);
+                } else {
+                    turn = turn === 1 ? 2 : 1;
+                    wind = Number(((Math.random() * 0.4) - 0.2).toFixed(2));
+                    gameState = "AIMING";
+                    
+                    if (turn === 1) {
+                        document.getElementById("turnHint").innerText = "Your Turn to Aim & Shoot!";
+                    } else {
+                        triggerAITurn();
+                    }
+                }
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById("p1HudLabel").innerText = `${playerName}: ${p1Health}HP`;
+            document.getElementById("p2HudHp").innerText = p2Health;
+            document.getElementById("windHud").innerText = `WIND: ${wind > 0 ? "+" : ""}${wind}`;
+        }
+
+        function triggerGameOver(playerWon) {
+            gameState = "GAMEOVER";
+            gameScreen.classList.add("hidden");
+            gameOverScreen.classList.remove("hidden");
+
+            const titleEl = document.getElementById("gameOverTitle");
+            const subEl = document.getElementById("gameOverSub");
+
+            if (playerWon) {
+                titleEl.innerText = "VICTORY!";
+                titleEl.className = "game-over-title win-color";
+                subEl.innerText = "CPU BOWMAN DESTROYED";
+            } else {
+                titleEl.innerText = "DEFEAT";
+                titleEl.className = "game-over-title lose-color";
+                subEl.innerText = "YOU WERE ELIMINATED";
             }
         }
 
         function drawScene() {
             ctx.clearRect(0, 0, 400, 711);
 
+            // Center grid divider line
             ctx.strokeStyle = "#1e293b";
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
             ctx.moveTo(0, 355); ctx.lineTo(400, 355); ctx.stroke();
             ctx.setLineDash([]);
 
-            drawArcher(p1.x, p1.y, "#38bdf8", remoteState.p1Health, "P1");
-            drawArcher(p2.x, p2.y, "#f43f5e", remoteState.p2Health, "P2");
+            // Draw Archers
+            drawArcher(p1.x, p1.y, "#38bdf8", p1Health);
+            drawArcher(p2.x, p2.y, "#f43f5e", p2Health);
 
-            if (isDragging && remoteState.turn === myPlayerNum) {
-                let shooter = myPlayerNum === 1 ? p1 : p2;
+            // Draw Aiming Drag Line for Player
+            if (isDragging && turn === 1 && gameState === "AIMING") {
                 ctx.strokeStyle = "#38bdf8";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(shooter.x, shooter.y - 25);
-                ctx.lineTo(shooter.x - (currentDragX - dragStartX), shooter.y - 25 - (currentDragY - dragStartY));
+                ctx.moveTo(p1.x, p1.y - 25);
+                ctx.lineTo(p1.x - (currentDragX - dragStartX), p1.y - 25 - (currentDragY - dragStartY));
                 ctx.stroke();
             }
 
+            // Draw Flying Arrow
             if (arrow.active) {
                 ctx.strokeStyle = "#f8fafc";
                 ctx.lineWidth = 2;
@@ -300,7 +399,7 @@
             }
         }
 
-        function drawArcher(x, y, color, health, label) {
+        function drawArcher(x, y, color, health) {
             ctx.strokeStyle = color;
             ctx.lineWidth = 2.5;
             ctx.beginPath(); ctx.arc(x, y - 35, 8, 0, Math.PI * 2); ctx.stroke();
