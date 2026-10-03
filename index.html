@@ -70,7 +70,7 @@
 
     <h1>BOWMAN ONLINE</h1>
     <div class="room-info" id="roomInfo">Connecting to room...</div>
-    <div class="status-hud" id="hudText">Waiting for player connection...</div>
+    <div class="status-hud" id="hudText">Connecting...</div>
     
     <div class="canvas-container">
         <canvas id="gameCanvas" width="400" height="711"></canvas>
@@ -81,9 +81,8 @@
     <!-- Firebase SDK Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Your exact Firebase project configuration from the console
         const firebaseConfig = {
             apiKey: "AIzaSyAr9h0NLPquw-ejP0AdHN_pAPlSCBACBp8",
             authDomain: "bowman-game.firebaseapp.com",
@@ -113,45 +112,42 @@
             alert("Game link copied! Send it to your friend.");
         };
 
-        // Determine Player Role & Room Sync
-        let myPlayerNum = 1;
-        let roleAssigned = false;
         const roomRef = ref(db, 'rooms/' + roomId);
+        let myPlayerNum = null;
 
-        onValue(roomRef, (snapshot) => {
-            const data = snapshot.val();
+        // Clean, Bulletproof Connection Initialization
+        async function initGame() {
+            const snapshot = await get(roomRef);
             
-            if (!data) {
-                if (!roleAssigned) {
-                    myPlayerNum = 1;
-                    roleAssigned = true;
-                    set(roomRef, {
-                        turn: 1,
-                        p1Health: 100,
-                        p2Health: 100,
-                        wind: 0.1,
-                        gameState: "AIMING",
-                        p1Connected: true,
-                        p2Connected: false,
-                        shotData: null
-                    });
-                }
+            if (!snapshot.exists()) {
+                // First person here creates the room as Player 1
+                myPlayerNum = 1;
+                await set(roomRef, {
+                    turn: 1,
+                    p1Health: 100,
+                    p2Health: 100,
+                    wind: 0.1,
+                    gameState: "AIMING",
+                    p1Connected: true,
+                    p2Connected: false,
+                    shotData: null
+                });
             } else {
-                if (!roleAssigned) {
-                    if (!data.p2Connected && myPlayerNum !== 1) {
-                        myPlayerNum = 2;
-                        roleAssigned = true;
-                        update(roomRef, { 
-                            p2Connected: true 
-                        });
-                    } else {
-                        myPlayerNum = 2;
-                        roleAssigned = true;
-                    }
-                }
-                syncGameState(data);
+                // Room exists, join as Player 2
+                myPlayerNum = 2;
+                await update(roomRef, {
+                    p2Connected: true
+                });
             }
-        });
+
+            // Start listening for live updates once our role is locked
+            onValue(roomRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) syncGameState(data);
+            });
+        }
+
+        initGame();
 
         // Canvas & Game Logic Setup
         const canvas = document.getElementById("gameCanvas");
@@ -162,7 +158,8 @@
             p1Health: 100,
             p2Health: 100,
             wind: 0.1,
-            gameState: "AIMING"
+            gameState: "AIMING",
+            p2Connected: false
         };
 
         const p1 = { x: 200, y: 600 };
@@ -173,7 +170,7 @@
         let dragStartX = 0, dragStartY = 0, currentDragX = 0, currentDragY = 0;
 
         canvas.addEventListener("pointerdown", (e) => {
-            if (remoteState.gameState !== "AIMING" || remoteState.turn !== myPlayerNum) return;
+            if (!remoteState.p2Connected || remoteState.gameState !== "AIMING" || remoteState.turn !== myPlayerNum) return;
             isDragging = true;
             const rect = canvas.getBoundingClientRect();
             dragStartX = (e.clientX - rect.left) * (400 / rect.width);
@@ -220,10 +217,10 @@
             }
 
             if (!data.p2Connected) {
-                document.getElementById("hudText").innerText = "Waiting for Player 2 to join...";
+                document.getElementById("hudText").innerText = `You are P${myPlayerNum}. Waiting for Player 2...`;
             } else if (remoteState.gameState === "AIMING") {
                 let isMyTurn = data.turn === myPlayerNum;
-                document.getElementById("hudText").innerText = isMyTurn ? "Your Turn to Aim & Shoot!" : `Waiting for Player ${data.turn}'s shot...`;
+                document.getElementById("hudText").innerText = isMyTurn ? "Your Turn to Aim & Shoot!" : `Waiting for P${data.turn}'s shot...`;
             } else if (remoteState.gameState === "FLYING") {
                 document.getElementById("hudText").innerText = "Arrow in flight...";
             }
@@ -239,11 +236,8 @@
 
             let targetPos = remoteState.turn === 1 ? p2 : p1;
             
-            // Check hit
             if (Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20) {
                 arrow.active = false;
-                
-                // Only the active shooter processes the score/turn change once
                 if (myPlayerNum === remoteState.turn) {
                     let newP1Health = remoteState.turn === 1 ? remoteState.p1Health : remoteState.p1Health - 35;
                     let newP2Health = remoteState.turn === 2 ? remoteState.p2Health : remoteState.p2Health - 35;
@@ -258,12 +252,8 @@
                         shotData: null
                     });
                 }
-            } 
-            // Check out of bounds / miss
-            else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
+            } else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
                 arrow.active = false;
-                
-                // Only the active shooter processes the miss/turn change once
                 if (myPlayerNum === remoteState.turn) {
                     let nextTurn = remoteState.turn === 1 ? 2 : 1;
                     update(roomRef, {
