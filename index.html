@@ -131,6 +131,12 @@
             margin-bottom: 20px;
             line-height: 1.4;
         }
+        .trust-badge {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 12px;
+        }
         .scorecard {
             background: #1e293b;
             border-radius: 12px;
@@ -152,7 +158,7 @@
             margin-bottom: 10px;
         }
         .score-desc {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #cbd5e1;
             line-height: 1.4;
         }
@@ -194,8 +200,8 @@
             {
                 stepNum: 1,
                 title: "Let's map out your income horizon.",
-                subtext: "To accurately protect your lifestyle, we evaluate your household earning power.",
-                insight: "💡 Insight: Protecting your current earning trajectory ensures your household's standard of living stays secure.",
+                subtext: "To evaluate household protection needs, we look at your annual earnings.",
+                insight: "💡 Educational Note: Protecting your active earning trajectory ensures family stability without abrupt lifestyle changes.",
                 type: "number",
                 placeholder: "e.g., 85000",
                 label: "Annual Household Income ($)"
@@ -203,8 +209,8 @@
             {
                 stepNum: 2,
                 title: "What major liabilities are you managing?",
-                subtext: "Entering your mortgage balance helps calculate exact debt elimination targets.",
-                insight: "💡 Insight: Most families target a policy large enough to completely clear the remaining mortgage balance.",
+                subtext: "Accounting for primary debts like a mortgage ensures your family owns their home outright.",
+                insight: "💡 Educational Note: Clearing the mortgage balance is typically the #1 priority for surviving family members.",
                 type: "number",
                 placeholder: "e.g., 250000",
                 label: "Remaining Mortgage Balance ($)"
@@ -212,8 +218,8 @@
             {
                 stepNum: 3,
                 title: "Who depends on your income most?",
-                subtext: "This dictates whether your plan requires multi-year income replacement or final expense protection.",
-                insight: "💡 Insight: Coverage timelines are tailored specifically to your family's unique dependency structure.",
+                subtext: "This determines whether your plan requires family income replacement or final expense coverage.",
+                insight: "💡 Educational Note: Coverage structures are custom-tailored to fit your exact household dependency layout.",
                 type: "tiles",
                 options: [
                     { text: "Spouse / Partner", val: "Spouse/Partner" },
@@ -225,8 +231,8 @@
             {
                 stepNum: 4,
                 title: "Do you have existing workplace coverage?",
-                subtext: "Group term insurance through work is a start, but it typically doesn't follow you if you change jobs.",
-                insight: "⚠️ Note: Private policies lock in your health tier permanently, independent of your employer.",
+                subtext: "Group plans are helpful, but they usually don't transfer if you change employers.",
+                insight: "⚠️ Important: Private individual policies lock in your health tier permanently, regardless of job changes.",
                 type: "tiles",
                 options: [
                     { text: "None / Not Sure", val: "None" },
@@ -238,8 +244,8 @@
             {
                 stepNum: 5,
                 title: "Your Underwriting Baseline",
-                subtext: "Age and nicotine usage form the initial carrier underwriting bracket.",
-                insight: "🎯 Final Step: This generates your preliminary rate tier estimate.",
+                subtext: "Age and nicotine status form the preliminary carrier qualification bracket.",
+                insight: "🎯 Final Step: This generates your personalized planning summary.",
                 type: "combined"
             }
         ];
@@ -275,6 +281,7 @@
                         <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">${s.label}</label>
                         <input type="number" id="userInputVal" value="${currentVal}" placeholder="${s.placeholder}" autofocus />
                         <button class="action-btn" onclick="saveNumberInput()">CONTINUE →</button>
+                        <div class="trust-badge">🔒 Confidential & secure. Used strictly for your personal estimate.</div>
                     </div>
                 `;
             } else if (s.type === "tiles") {
@@ -295,7 +302,7 @@
                             <button class="option-tile ${userData.tobacco === 'Tobacco' ? 'selected' : ''}" onclick="setTobacco('Tobacco', this)">Yes</button>
                         </div>
 
-                        <button class="action-btn" onclick="saveCombinedInput()">GENERATE SNAPSHOT →</button>
+                        <button class="action-btn" onclick="saveCombinedInput()">VIEW MY SNAPSHOT →</button>
                     </div>
                 `;
             }
@@ -341,23 +348,22 @@
         function renderScorecard() {
             progressContainer.classList.add("hidden");
 
-            // Corrected conditional logic: if single with no family dependents, scale down income replacement gap
+            // Bulletproof math logic: scale down multiplier for single/no dependents
             let incomeMultiplier = (userData.dependents === "Just Myself" || userData.dependents === "Adult Dependents") ? 0 : 10;
             let estimatedCoverageNeed = (userData.income * incomeMultiplier) + userData.mortgage;
             
-            // Floor baseline for protection gap if figures are minimal
             if (estimatedCoverageNeed < 50000) estimatedCoverageNeed = 100000;
 
             appScreen.innerHTML = `
                 <div style="text-align:center; margin-bottom: 15px;">
-                    <h2 style="color: #4ade80;">Snapshot Complete! ✓</h2>
-                    <div class="subtext" style="margin-bottom:15px;">Your custom protection profile has been compiled.</div>
+                    <h2 style="color: #4ade80;">Snapshot Compiled! ✓</h2>
+                    <div class="subtext" style="margin-bottom:15px;">Here is your custom household protection baseline.</div>
                 </div>
 
                 <div class="scorecard">
-                    <div class="score-title">Estimated Target Protection Gap</div>
+                    <div class="score-title">Suggested Protection Benchmark</div>
                     <div class="score-value">$${estimatedCoverageNeed.toLocaleString()}</div>
-                    <div class="score-desc">Calculated using your household liability structure and dependent tier.</div>
+                    <div class="score-desc">*Educational estimate calculated using standard actuarial income-replacement multipliers and active mortgage debt.</div>
                 </div>
 
                 <div class="summary-list">
@@ -367,7 +373,7 @@
                     <div class="summary-item"><span>Age / Nicotine Profile:</span> <strong>Age ${userData.age} (${userData.tobacco})</strong></div>
                 </div>
 
-                <button class="action-btn" onclick="window.location.href='https://calendly.com'">SCHEDULE STRATEGY REVIEW</button>
+                <button class="action-btn" onclick="window.location.href='https://calendly.com'">DISCUSS OPTIONS WITH AN AGENT</button>
             `;
         }
 
