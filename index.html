@@ -113,7 +113,7 @@
             alert("Game link copied! Send it to your friend.");
         };
 
-        // Determine Player Role & Room Sync (Robust handling)
+        // Determine Player Role & Room Sync
         let myPlayerNum = 1;
         let roleAssigned = false;
         const roomRef = ref(db, 'rooms/' + roomId);
@@ -130,7 +130,7 @@
                         p1Health: 100,
                         p2Health: 100,
                         wind: 0.1,
-                        gameState: "WAITING",
+                        gameState: "AIMING",
                         p1Connected: true,
                         p2Connected: false,
                         shotData: null
@@ -138,12 +138,11 @@
                 }
             } else {
                 if (!roleAssigned) {
-                    if (!data.p2Connected) {
+                    if (!data.p2Connected && myPlayerNum !== 1) {
                         myPlayerNum = 2;
                         roleAssigned = true;
                         update(roomRef, { 
-                            p2Connected: true, 
-                            gameState: "AIMING" 
+                            p2Connected: true 
                         });
                     } else {
                         myPlayerNum = 2;
@@ -163,7 +162,7 @@
             p1Health: 100,
             p2Health: 100,
             wind: 0.1,
-            gameState: "WAITING"
+            gameState: "AIMING"
         };
 
         const p1 = { x: 200, y: 600 };
@@ -220,11 +219,13 @@
                 arrow.active = true;
             }
 
-            if (data.gameState === "WAITING") {
+            if (!data.p2Connected) {
                 document.getElementById("hudText").innerText = "Waiting for Player 2 to join...";
-            } else if (data.gameState === "AIMING") {
+            } else if (remoteState.gameState === "AIMING") {
                 let isMyTurn = data.turn === myPlayerNum;
                 document.getElementById("hudText").innerText = isMyTurn ? "Your Turn to Aim & Shoot!" : `Waiting for Player ${data.turn}'s shot...`;
+            } else if (remoteState.gameState === "FLYING") {
+                document.getElementById("hudText").innerText = "Arrow in flight...";
             }
         }
 
@@ -238,8 +239,11 @@
 
             let targetPos = remoteState.turn === 1 ? p2 : p1;
             
+            // Check hit
             if (Math.hypot(arrow.x - targetPos.x, arrow.y - targetPos.y) < 20) {
                 arrow.active = false;
+                
+                // Only the active shooter processes the score/turn change once
                 if (myPlayerNum === remoteState.turn) {
                     let newP1Health = remoteState.turn === 1 ? remoteState.p1Health : remoteState.p1Health - 35;
                     let newP2Health = remoteState.turn === 2 ? remoteState.p2Health : remoteState.p2Health - 35;
@@ -250,17 +254,23 @@
                         p2Health: Math.max(0, newP2Health),
                         turn: nextTurn,
                         gameState: "AIMING",
-                        wind: (Math.random() * 0.3) - 0.15
+                        wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
+                        shotData: null
                     });
                 }
-            } else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
+            } 
+            // Check out of bounds / miss
+            else if (arrow.y > 711 || arrow.y < 0 || arrow.x < 0 || arrow.x > 400) {
                 arrow.active = false;
+                
+                // Only the active shooter processes the miss/turn change once
                 if (myPlayerNum === remoteState.turn) {
                     let nextTurn = remoteState.turn === 1 ? 2 : 1;
                     update(roomRef, {
                         turn: nextTurn,
                         gameState: "AIMING",
-                        wind: (Math.random() * 0.3) - 0.15
+                        wind: Number(((Math.random() * 0.3) - 0.15).toFixed(2)),
+                        shotData: null
                     });
                 }
             }
