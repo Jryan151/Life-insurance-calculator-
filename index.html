@@ -68,7 +68,7 @@
             flex-direction: column;
             gap: 12px;
         }
-        input[type="number"], input[type="text"] {
+        input[type="number"] {
             background: #1e293b;
             border: 2px solid #334155;
             color: #f8fafc;
@@ -116,7 +116,7 @@
             text-align: center;
             transition: all 0.2s;
         }
-        button.option-tile:hover, button.option-tile.selected {
+        button.option-tile:hover {
             background: rgba(56, 189, 248, 0.1);
             border-color: #38bdf8;
             color: #38bdf8;
@@ -131,7 +131,6 @@
             margin-bottom: 20px;
             line-height: 1.4;
         }
-        /* Result Dashboard Styling */
         .scorecard {
             background: #1e293b;
             border-radius: 12px;
@@ -187,10 +186,7 @@
             </div>
         </div>
 
-        <!-- APP SCREEN CONTAINER -->
-        <div id="appScreen">
-            <!-- Dynamically injected step content -->
-        </div>
+        <div id="appScreen"></div>
     </div>
 
     <script>
@@ -198,8 +194,8 @@
             {
                 stepNum: 1,
                 title: "Let's map out your income horizon.",
-                subtext: "To accurately protect your lifestyle, we look at your earning power over time.",
-                insight: "💡 Insight: Protecting your current earning trajectory ensures your family's standard of living never misses a beat.",
+                subtext: "To accurately protect your lifestyle, we evaluate your household earning power.",
+                insight: "💡 Insight: Protecting your current earning trajectory ensures your household's standard of living stays secure.",
                 type: "number",
                 placeholder: "e.g., 85000",
                 label: "Annual Household Income ($)"
@@ -207,41 +203,49 @@
             {
                 stepNum: 2,
                 title: "What major liabilities are you managing?",
-                subtext: "Knowing your primary financial anchors helps calculate exact debt elimination targets.",
-                insight: "💡 Insight: Most families want a policy large enough to completely clear the mortgage so surviving family members own their home outright.",
+                subtext: "Entering your mortgage balance helps calculate exact debt elimination targets.",
+                insight: "💡 Insight: Most families target a policy large enough to completely clear the remaining mortgage balance.",
                 type: "number",
                 placeholder: "e.g., 250000",
                 label: "Remaining Mortgage Balance ($)"
             },
             {
                 stepNum: 3,
-                title: "Who depends on you the most?",
-                subtext: "This helps us tailor the timeline of your financial safety net.",
-                insight: "💡 Insight: The ideal policy duration often matches the number of years until your youngest dependent completes school or enters adulthood.",
+                title: "Who depends on your income most?",
+                subtext: "This dictates whether your plan requires multi-year income replacement or final expense protection.",
+                insight: "💡 Insight: Coverage timelines are tailored specifically to your family's unique dependency structure.",
                 type: "tiles",
-                options: ["Just Partner/Spouse", "Young Children", "Adult Dependents", "Just Myself"]
+                options: [
+                    { text: "Spouse / Partner", val: "Spouse/Partner" },
+                    { text: "Young Children", val: "Young Children" },
+                    { text: "Adult Dependents", val: "Adult Dependents" },
+                    { text: "Just Myself", val: "Just Myself" }
+                ]
             },
             {
                 stepNum: 4,
-                title: "Do you currently have workplace coverage?",
-                subtext: "Many people rely solely on group term insurance through their employer.",
-                insight: "⚠️ Note: Workplace policies typically terminate or don't transfer if you change jobs or retire. Having private coverage locks in your rate independently.",
+                title: "Do you have existing workplace coverage?",
+                subtext: "Group term insurance through work is a start, but it typically doesn't follow you if you change jobs.",
+                insight: "⚠️ Note: Private policies lock in your health tier permanently, independent of your employer.",
                 type: "tiles",
-                options: ["None / Not Sure", "Basic Work Policy", "Private Policy Active", "Both Work & Private"]
+                options: [
+                    { text: "None / Not Sure", val: "None" },
+                    { text: "Basic Work Policy", val: "Work Group Plan" },
+                    { text: "Private Policy", val: "Private Policy" },
+                    { text: "Both Work & Private", val: "Both" }
+                ]
             },
             {
                 stepNum: 5,
-                title: "Where are you currently at in life?",
-                subtext: "Age and health baselines determine your optimal underwriting tier.",
-                insight: "🎯 Final Step: This lets us calculate your custom readiness profile instantly.",
-                type: "number",
-                placeholder: "e.g., 38",
-                label: "Your Current Age"
+                title: "Your Underwriting Baseline",
+                subtext: "Age and nicotine usage form the initial carrier underwriting bracket.",
+                insight: "🎯 Final Step: This generates your preliminary rate tier estimate.",
+                type: "combined"
             }
         ];
 
         let currentStepIndex = 0;
-        let userData = { income: 0, mortgage: 0, dependents: "", coverage: "", age: 0 };
+        let userData = { income: 0, mortgage: 0, dependents: "", coverage: "", age: 0, tobacco: "Non-Tobacco" };
 
         const appScreen = document.getElementById("appScreen");
         const progressContainer = document.getElementById("progressContainer");
@@ -265,31 +269,46 @@
             `;
 
             if (s.type === "number") {
+                let currentVal = currentStepIndex === 0 ? (userData.income || "") : (userData.mortgage || "");
                 html += `
                     <div class="input-group">
                         <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">${s.label}</label>
-                        <input type="number" id="userInputVal" placeholder="${s.placeholder}" autofocus />
+                        <input type="number" id="userInputVal" value="${currentVal}" placeholder="${s.placeholder}" autofocus />
                         <button class="action-btn" onclick="saveNumberInput()">CONTINUE →</button>
                     </div>
                 `;
             } else if (s.type === "tiles") {
                 html += `<div class="options-grid">`;
                 s.options.forEach(opt => {
-                    html += `<button class="option-tile" onclick="saveTileInput('${opt}')">${opt}</button>`;
+                    html += `<button class="option-tile" onclick="saveTileInput('${opt.val}')">${opt.text}</button>`;
                 });
                 html += `</div>`;
+            } else if (s.type === "combined") {
+                html += `
+                    <div class="input-group">
+                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Current Age</label>
+                        <input type="number" id="userAgeVal" value="${userData.age || ""}" placeholder="e.g., 38" autofocus />
+                        
+                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600; margin-top:10px;">Tobacco / Nicotine Use (Past 12 Months)</label>
+                        <div class="options-grid" style="margin-top:5px;">
+                            <button class="option-tile ${userData.tobacco === 'Non-Tobacco' ? 'selected' : ''}" onclick="setTobacco('Non-Tobacco', this)">No</button>
+                            <button class="option-tile ${userData.tobacco === 'Tobacco' ? 'selected' : ''}" onclick="setTobacco('Tobacco', this)">Yes</button>
+                        </div>
+
+                        <button class="action-btn" onclick="saveCombinedInput()">GENERATE SNAPSHOT →</button>
+                    </div>
+                `;
             }
 
             appScreen.innerHTML = html;
         }
 
         function saveNumberInput() {
-            let val = document.getElementById("userInputVal").value;
-            if (!val) return;
+            let val = Number(document.getElementById("userInputVal").value);
+            if (!val && val !== 0) return;
             
-            if (currentStepIndex === 0) userData.income = Number(val);
-            if (currentStepIndex === 1) userData.mortgage = Number(val);
-            if (currentStepIndex === 4) userData.age = Number(val);
+            if (currentStepIndex === 0) userData.income = val;
+            if (currentStepIndex === 1) userData.mortgage = val;
 
             currentStepIndex++;
             renderStep();
@@ -303,33 +322,52 @@
             renderStep();
         }
 
+        function setTobacco(status, btnElement) {
+            userData.tobacco = status;
+            let parent = btnElement.parentElement;
+            parent.querySelectorAll('.option-tile').forEach(b => b.style.borderColor = '#334155');
+            btnElement.style.borderColor = '#38bdf8';
+        }
+
+        function saveCombinedInput() {
+            let ageVal = Number(document.getElementById("userAgeVal").value);
+            if (!ageVal) return;
+            userData.age = ageVal;
+
+            currentStepIndex++;
+            renderStep();
+        }
+
         function renderScorecard() {
             progressContainer.classList.add("hidden");
 
-            // Simple algorithmic logic estimation for scorecard value
-            let estimatedCoverageNeed = (userData.income * 10) + userData.mortgage;
-            if (estimatedCoverageNeed < 100000) estimatedCoverageNeed = 250000;
+            // Corrected conditional logic: if single with no family dependents, scale down income replacement gap
+            let incomeMultiplier = (userData.dependents === "Just Myself" || userData.dependents === "Adult Dependents") ? 0 : 10;
+            let estimatedCoverageNeed = (userData.income * incomeMultiplier) + userData.mortgage;
+            
+            // Floor baseline for protection gap if figures are minimal
+            if (estimatedCoverageNeed < 50000) estimatedCoverageNeed = 100000;
 
             appScreen.innerHTML = `
                 <div style="text-align:center; margin-bottom: 15px;">
-                    <h2 style="color: #4ade80;">Snapshot Complete! 🎉</h2>
-                    <div class="subtext" style="margin-bottom:15px;">Here is your customized financial protection blueprint.</div>
+                    <h2 style="color: #4ade80;">Snapshot Complete! ✓</h2>
+                    <div class="subtext" style="margin-bottom:15px;">Your custom protection profile has been compiled.</div>
                 </div>
 
                 <div class="scorecard">
                     <div class="score-title">Estimated Target Protection Gap</div>
                     <div class="score-value">$${estimatedCoverageNeed.toLocaleString()}</div>
-                    <div class="score-desc">Based on your income protection multi-year multiplier and active mortgage balance.</div>
+                    <div class="score-desc">Calculated using your household liability structure and dependent tier.</div>
                 </div>
 
                 <div class="summary-list">
-                    <div class="summary-item"><span>Annual Income Protected:</span> <strong>$${userData.income.toLocaleString()}</strong></div>
+                    <div class="summary-item"><span>Annual Income:</span> <strong>$${userData.income.toLocaleString()}</strong></div>
                     <div class="summary-item"><span>Mortgage Liability:</span> <strong>$${userData.mortgage.toLocaleString()}</strong></div>
                     <div class="summary-item"><span>Primary Focus:</span> <strong>${userData.dependents}</strong></div>
-                    <div class="summary-item"><span>Current Policy Tier:</span> <strong>${userData.coverage}</strong></div>
+                    <div class="summary-item"><span>Age / Nicotine Profile:</span> <strong>Age ${userData.age} (${userData.tobacco})</strong></div>
                 </div>
 
-                <button class="action-btn" onclick="alert('In production, this opens your calendar or submits data to your webhook/CRM!')">BOOK STRATEGY REVIEW WITH AGENT</button>
+                <button class="action-btn" onclick="window.location.href='https://calendly.com'">SCHEDULE STRATEGY REVIEW</button>
             `;
         }
 
