@@ -2,225 +2,338 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coverage Finder - DreamCatcher Financial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Financial Snapshot - DreamCatcher Financial</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-            background-color: #0b0f19;
+            background-color: #050b14;
             color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             padding: 20px;
         }
         .container {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 12px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
             padding: 30px;
             width: 100%;
-            max-width: 450px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 480px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #38bdf8;
+            width: 20%;
+            transition: width 0.3s ease;
+        }
+        .step-indicator {
+            font-size: 0.75rem;
+            color: #38bdf8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
         h2 {
-            font-size: 1.25rem;
-            color: #38bdf8;
-            margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 1px;
+            font-size: 1.35rem;
+            color: #f8fafc;
+            margin-bottom: 12px;
+            line-height: 1.3;
         }
-        .question-text {
-            font-size: 1.05rem;
-            margin-bottom: 20px;
-            color: #e2e8f0;
+        .subtext {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 24px;
             line-height: 1.4;
         }
-        .options-group {
+        .input-group {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        button.option-btn {
+        input[type="number"], input[type="text"] {
             background: #1e293b;
+            border: 2px solid #334155;
             color: #f8fafc;
-            border: 1px solid #334155;
-            padding: 14px;
-            border-radius: 8px;
-            text-align: left;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        button.option-btn:hover {
-            background: #38bdf8;
-            color: #0b0f19;
-            border-color: #38bdf8;
-            font-weight: 600;
-        }
-        .result-box {
+            padding: 16px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            outline: none;
             text-align: center;
-        }
-        .policy-tag {
-            font-size: 1.5rem;
-            color: #4ade80;
             font-weight: bold;
-            margin: 15px 0;
         }
-        .result-desc {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 25px;
-            line-height: 1.5;
+        input:focus {
+            border-color: #38bdf8;
         }
-        .cta-btn {
+        button.action-btn {
             background: #38bdf8;
-            color: #0b0f19;
+            color: #050b14;
             border: none;
             width: 100%;
-            padding: 14px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 10px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            text-decoration: display;
+            margin-top: 20px;
+            transition: background 0.2s, transform 0.1s;
         }
-        .cta-btn:hover {
+        button.action-btn:hover {
             background: #7dd3fc;
+            transform: translateY(-1px);
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        button.option-tile {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 2px solid #334155;
+            padding: 18px 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        button.option-tile:hover, button.option-tile.selected {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        .value-insight {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 3px solid #38bdf8;
+            padding: 12px 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85rem;
+            color: #bae6fd;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        /* Result Dashboard Styling */
+        .scorecard {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .score-title {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .score-value {
+            font-size: 2.2rem;
+            color: #4ade80;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .score-desc {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+        .summary-list {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #111827;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
         }
         .hidden {
             display: none !important;
-        }
-        .progress {
-            font-size: 0.75rem;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-align: center;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div id="progressIndicator" class="progress">Step 1 of 3</div>
-        
-        <!-- QUIZ SCREEN -->
-        <div id="quizScreen">
-            <h2 id="quizTitle">Find Your Ideal Coverage</h2>
-            <div id="questionText" class="question-text">Loading question...</div>
-            <div id="optionsGroup" class="options-group">
-                <!-- Dynamically injected buttons -->
+        <div id="progressContainer">
+            <div id="stepIndicator" class="step-indicator">Step 1 of 5</div>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
             </div>
         </div>
 
-        <!-- RESULT SCREEN -->
-        <div id="resultScreen" class="result-box hidden">
-            <h2>Recommended For You</h2>
-            <div id="policyRecommendation" class="policy-tag">TERM LIFE INSURANCE</div>
-            <div id="policyDescription" class="result-desc">
-                Based on your goals, a Term policy provides the highest death benefit protection for the lowest initial cost during your family's core growing years.
-            </div>
-            <button class="cta-btn" onclick="alert('Redirecting to agent calendar or lead form!')">BOOK YOUR FREE CONSULTATION</button>
+        <!-- APP SCREEN CONTAINER -->
+        <div id="appScreen">
+            <!-- Dynamically injected step content -->
         </div>
     </div>
 
     <script>
-        const questions = [
+        const steps = [
             {
-                title: "Primary Objective",
-                text: "What is your main financial priority right now?",
-                options: [
-                    { text: "Protecting my family/mortgage if something happens to me", score: "TERM" },
-                    { text: "Building tax-advantaged cash value alongside death benefit", score: "IUL" },
-                    { text: "Covering final end-of-life and funeral expenses", score: "FINAL" }
-                ]
+                stepNum: 1,
+                title: "Let's map out your income horizon.",
+                subtext: "To accurately protect your lifestyle, we look at your earning power over time.",
+                insight: "💡 Insight: Protecting your current earning trajectory ensures your family's standard of living never misses a beat.",
+                type: "number",
+                placeholder: "e.g., 85000",
+                label: "Annual Household Income ($)"
             },
             {
-                title: "Time Horizon",
-                text: "How long do you need this specific layer of coverage to last?",
-                options: [
-                    { text: "A specific window (e.g., 10, 20, or 30 years until retirement/kids grow up)", score: "TERM" },
-                    { text: "For the rest of my life with potential cash growth", score: "IUL" },
-                    { text: "Lifelong coverage with guaranteed level premiums", score: "FINAL" }
-                ]
+                stepNum: 2,
+                title: "What major liabilities are you managing?",
+                subtext: "Knowing your primary financial anchors helps calculate exact debt elimination targets.",
+                insight: "💡 Insight: Most families want a policy large enough to completely clear the mortgage so surviving family members own their home outright.",
+                type: "number",
+                placeholder: "e.g., 250000",
+                label: "Remaining Mortgage Balance ($)"
             },
             {
-                title: "Budget & Growth Preference",
-                text: "Which statement best describes your budget approach?",
-                options: [
-                    { text: "Maximum coverage for the lowest current monthly investment", score: "TERM" },
-                    { text: "Interested in linking cash value performance to market indexes safely", score: "IUL" },
-                    { text: "Simple, predictable permanent coverage that never expires", score: "FINAL" }
-                ]
+                stepNum: 3,
+                title: "Who depends on you the most?",
+                subtext: "This helps us tailor the timeline of your financial safety net.",
+                insight: "💡 Insight: The ideal policy duration often matches the number of years until your youngest dependent completes school or enters adulthood.",
+                type: "tiles",
+                options: ["Just Partner/Spouse", "Young Children", "Adult Dependents", "Just Myself"]
+            },
+            {
+                stepNum: 4,
+                title: "Do you currently have workplace coverage?",
+                subtext: "Many people rely solely on group term insurance through their employer.",
+                insight: "⚠️ Note: Workplace policies typically terminate or don't transfer if you change jobs or retire. Having private coverage locks in your rate independently.",
+                type: "tiles",
+                options: ["None / Not Sure", "Basic Work Policy", "Private Policy Active", "Both Work & Private"]
+            },
+            {
+                stepNum: 5,
+                title: "Where are you currently at in life?",
+                subtext: "Age and health baselines determine your optimal underwriting tier.",
+                insight: "🎯 Final Step: This lets us calculate your custom readiness profile instantly.",
+                type: "number",
+                placeholder: "e.g., 38",
+                label: "Your Current Age"
             }
         ];
 
-        let currentStep = 0;
-        let scores = { TERM: 0, IUL: 0, FINAL: 0 };
+        let currentStepIndex = 0;
+        let userData = { income: 0, mortgage: 0, dependents: "", coverage: "", age: 0 };
 
-        const progressIndicator = document.getElementById("progressIndicator");
-        const quizTitle = document.getElementById("quizTitle");
-        const questionText = document.getElementById("questionText");
-        const optionsGroup = document.getElementById("optionsGroup");
-        const quizScreen = document.getElementById("quizScreen");
-        const resultScreen = document.getElementById("resultScreen");
+        const appScreen = document.getElementById("appScreen");
+        const progressContainer = document.getElementById("progressContainer");
+        const stepIndicator = document.getElementById("stepIndicator");
+        const progressBar = document.getElementById("progressBar");
 
-        function loadQuestion() {
-            if (currentStep >= questions.length) {
-                showResult();
+        function renderStep() {
+            if (currentStepIndex >= steps.length) {
+                renderScorecard();
                 return;
             }
 
-            let q = questions[currentStep];
-            progressIndicator.innerText = `Step ${currentStep + 1} of ${questions.length}`;
-            quizTitle.innerText = q.title;
-            questionText.innerText = q.text;
-            optionsGroup.innerHTML = "";
+            let s = steps[currentStepIndex];
+            stepIndicator.innerText = `Step ${s.stepNum} of ${steps.length}`;
+            progressBar.style.width = `${(s.stepNum / steps.length) * 100}%`;
 
-            q.options.forEach(opt => {
-                let btn = document.createElement("button");
-                btn.className = "option-btn";
-                btn.innerText = opt.text;
-                btn.onclick = () => {
-                    scores[opt.score]++;
-                    currentStep++;
-                    loadQuestion();
-                };
-                optionsGroup.appendChild(btn);
-            });
-        }
+            let html = `
+                <h2>${s.title}</h2>
+                <div class="subtext">${s.subtext}</div>
+                <div class="value-insight">${s.insight}</div>
+            `;
 
-        function showResult() {
-            quizScreen.classList.add("hidden");
-            resultScreen.classList.remove("hidden");
-
-            // Find highest scoring category
-            let bestMatch = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-            
-            let recEl = document.getElementById("policyRecommendation");
-            let descEl = document.getElementById("policyDescription");
-
-            if (bestMatch === "TERM") {
-                recEl.innerText = "TERM LIFE INSURANCE";
-                descEl.innerText = "Ideal for your current stage. It provides high-limit income and debt protection at an affordable rate during your peak earning and family-raising years.";
-            } else if (bestMatch === "IUL") {
-                recEl.innerText = "INDEXED UNIVERSAL LIFE (IUL)";
-                descEl.innerText = "Best aligned with your wealth-building goals. It offers permanent lifelong protection combined with cash value growth tied to market indices with downside floor protection.";
-            } else {
-                recEl.innerText = "FINAL EXPENSE INSURANCE";
-                descEl.innerText = "Tailored for lifelong peace of mind, ensuring final arrangements and medical bills are completely covered without burdening loved ones.";
+            if (s.type === "number") {
+                html += `
+                    <div class="input-group">
+                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">${s.label}</label>
+                        <input type="number" id="userInputVal" placeholder="${s.placeholder}" autofocus />
+                        <button class="action-btn" onclick="saveNumberInput()">CONTINUE →</button>
+                    </div>
+                `;
+            } else if (s.type === "tiles") {
+                html += `<div class="options-grid">`;
+                s.options.forEach(opt => {
+                    html += `<button class="option-tile" onclick="saveTileInput('${opt}')">${opt}</button>`;
+                });
+                html += `</div>`;
             }
+
+            appScreen.innerHTML = html;
         }
 
-        loadQuestion();
+        function saveNumberInput() {
+            let val = document.getElementById("userInputVal").value;
+            if (!val) return;
+            
+            if (currentStepIndex === 0) userData.income = Number(val);
+            if (currentStepIndex === 1) userData.mortgage = Number(val);
+            if (currentStepIndex === 4) userData.age = Number(val);
+
+            currentStepIndex++;
+            renderStep();
+        }
+
+        function saveTileInput(val) {
+            if (currentStepIndex === 2) userData.dependents = val;
+            if (currentStepIndex === 3) userData.coverage = val;
+
+            currentStepIndex++;
+            renderStep();
+        }
+
+        function renderScorecard() {
+            progressContainer.classList.add("hidden");
+
+            // Simple algorithmic logic estimation for scorecard value
+            let estimatedCoverageNeed = (userData.income * 10) + userData.mortgage;
+            if (estimatedCoverageNeed < 100000) estimatedCoverageNeed = 250000;
+
+            appScreen.innerHTML = `
+                <div style="text-align:center; margin-bottom: 15px;">
+                    <h2 style="color: #4ade80;">Snapshot Complete! 🎉</h2>
+                    <div class="subtext" style="margin-bottom:15px;">Here is your customized financial protection blueprint.</div>
+                </div>
+
+                <div class="scorecard">
+                    <div class="score-title">Estimated Target Protection Gap</div>
+                    <div class="score-value">$${estimatedCoverageNeed.toLocaleString()}</div>
+                    <div class="score-desc">Based on your income protection multi-year multiplier and active mortgage balance.</div>
+                </div>
+
+                <div class="summary-list">
+                    <div class="summary-item"><span>Annual Income Protected:</span> <strong>$${userData.income.toLocaleString()}</strong></div>
+                    <div class="summary-item"><span>Mortgage Liability:</span> <strong>$${userData.mortgage.toLocaleString()}</strong></div>
+                    <div class="summary-item"><span>Primary Focus:</span> <strong>${userData.dependents}</strong></div>
+                    <div class="summary-item"><span>Current Policy Tier:</span> <strong>${userData.coverage}</strong></div>
+                </div>
+
+                <button class="action-btn" onclick="alert('In production, this opens your calendar or submits data to your webhook/CRM!')">BOOK STRATEGY REVIEW WITH AGENT</button>
+            `;
+        }
+
+        renderStep();
     </script>
 </body>
 </html>
