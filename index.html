@@ -70,7 +70,7 @@
 
     <h1>BOWMAN ONLINE</h1>
     <div class="room-info" id="roomInfo">Connecting to room...</div>
-    <div class="status-hud" id="hudText">Connecting...</div>
+    <div class="status-hud" id="hudText">Connecting to server...</div>
     
     <div class="canvas-container">
         <canvas id="gameCanvas" width="400" height="711"></canvas>
@@ -81,7 +81,7 @@
     <!-- Firebase SDK Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAr9h0NLPquw-ejP0AdHN_pAPlSCBACBp8",
@@ -97,7 +97,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Room Setup from URL Parameters
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get("room");
         
@@ -114,40 +113,41 @@
 
         const roomRef = ref(db, 'rooms/' + roomId);
         let myPlayerNum = null;
+        let initialized = false;
 
-        // Clean, Bulletproof Connection Initialization
-        async function initGame() {
-            const snapshot = await get(roomRef);
+        // Bulletproof non-blocking listener initialization
+        onValue(roomRef, (snapshot) => {
+            const data = snapshot.val();
             
-            if (!snapshot.exists()) {
-                // First person here creates the room as Player 1
-                myPlayerNum = 1;
-                await set(roomRef, {
-                    turn: 1,
-                    p1Health: 100,
-                    p2Health: 100,
-                    wind: 0.1,
-                    gameState: "AIMING",
-                    p1Connected: true,
-                    p2Connected: false,
-                    shotData: null
-                });
-            } else {
-                // Room exists, join as Player 2
-                myPlayerNum = 2;
-                await update(roomRef, {
-                    p2Connected: true
-                });
+            if (!initialized) {
+                if (!data) {
+                    // Room doesn't exist -> Claim P1 and create it
+                    myPlayerNum = 1;
+                    initialized = true;
+                    set(roomRef, {
+                        turn: 1,
+                        p1Health: 100,
+                        p2Health: 100,
+                        wind: 0.1,
+                        gameState: "AIMING",
+                        p1Connected: true,
+                        p2Connected: false,
+                        shotData: null
+                    });
+                } else {
+                    // Room exists -> Claim P2 and mark connected
+                    myPlayerNum = 2;
+                    initialized = true;
+                    update(roomRef, {
+                        p2Connected: true
+                    });
+                }
             }
-
-            // Start listening for live updates once our role is locked
-            onValue(roomRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) syncGameState(data);
-            });
-        }
-
-        initGame();
+            
+            if (data) {
+                syncGameState(data);
+            }
+        });
 
         // Canvas & Game Logic Setup
         const canvas = document.getElementById("gameCanvas");
