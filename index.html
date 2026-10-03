@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Financial Snapshot - DreamCatcher Financial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE LOOP: Behavioral Mirror</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace;
         }
         body {
             background-color: #050b14;
-            color: #f8fafc;
+            color: #38bdf8;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -23,395 +23,189 @@
         .container {
             background: #0f172a;
             border: 1px solid #1e293b;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 30px;
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            max-width: 600px;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
         }
-        .progress-bar-container {
-            width: 100%;
-            height: 6px;
-            background: #1e293b;
-            border-radius: 3px;
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background: #38bdf8;
-            width: 16.6%;
-            transition: width 0.3s ease;
-        }
-        .step-indicator {
+        .system-header {
             font-size: 0.75rem;
-            color: #38bdf8;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        h2 {
-            font-size: 1.35rem;
-            color: #f8fafc;
-            margin-bottom: 12px;
-            line-height: 1.3;
-        }
-        .subtext {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 24px;
-            line-height: 1.4;
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        input[type="number"], input[type="text"], input[type="email"], input[type="tel"] {
-            background: #1e293b;
-            border: 2px solid #334155;
-            color: #f8fafc;
-            padding: 16px;
-            font-size: 1.1rem;
-            border-radius: 10px;
-            outline: none;
-            font-weight: bold;
-        }
-        input[type="number"] {
-            text-align: center;
-        }
-        input:focus {
-            border-color: #38bdf8;
-        }
-        button.action-btn {
-            background: #38bdf8;
-            color: #050b14;
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.2s, transform 0.1s;
-        }
-        button.action-btn:hover {
-            background: #7dd3fc;
-            transform: translateY(-1px);
-        }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        button.option-tile {
-            background: #1e293b;
-            color: #f8fafc;
-            border: 2px solid #334155;
-            padding: 18px 12px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        button.option-tile:hover {
-            background: rgba(56, 189, 248, 0.1);
-            border-color: #38bdf8;
-            color: #38bdf8;
-        }
-        .value-insight {
-            background: rgba(56, 189, 248, 0.08);
-            border-left: 3px solid #38bdf8;
-            padding: 12px 15px;
-            border-radius: 0 8px 8px 0;
-            font-size: 0.85rem;
-            color: #bae6fd;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-        .trust-badge {
-            font-size: 0.75rem;
             color: #64748b;
-            text-align: center;
-            margin-top: 12px;
-        }
-        .scorecard {
-            background: #1e293b;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .score-title {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .score-value {
-            font-size: 2.2rem;
-            color: #4ade80;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .score-desc {
-            font-size: 0.82rem;
-            color: #cbd5e1;
-            line-height: 1.4;
-        }
-        .summary-list {
-            font-size: 0.9rem;
-            color: #cbd5e1;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: #111827;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .summary-item {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
             display: flex;
             justify-content: space-between;
         }
-        .hidden {
-            display: none !important;
+        h2 {
+            font-size: 1.25rem;
+            color: #f8fafc;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        button.choice-btn {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+        button.choice-btn:hover {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: #38bdf8;
+            color: #38bdf8;
+            padding-left: 22px;
+        }
+        .profile-box {
+            background: #111827;
+            border-left: 3px solid #38bdf8;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-top: 15px;
+        }
+        .profile-title {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="progressContainer">
-            <div id="stepIndicator" class="step-indicator">Step 1 of 6</div>
-            <div class="progress-bar-container">
-                <div id="progressBar" class="progress-bar"></div>
-            </div>
-        </div>
-
-        <div id="appScreen"></div>
+    <div class="container" id="app">
+        <!-- Dynamic content injects here -->
     </div>
 
     <script>
-        const totalSteps = 6;
-        let currentStepIndex = 0;
-        let userData = { 
-            income: 0, 
-            mortgage: 0, 
-            dependents: "", 
-            coverage: "", 
-            age: 0, 
-            tobacco: "Non-Tobacco",
-            name: "",
-            email: "",
-            phone: ""
-        };
+        // DISC scores tracker
+        let scores = { D: 0, I: 0, S: 0, C: 0 };
+        let currentScene = 0;
 
-        const appScreen = document.getElementById("appScreen");
-        const progressContainer = document.getElementById("progressContainer");
-        const stepIndicator = document.getElementById("stepIndicator");
-        const progressBar = document.getElementById("progressBar");
+        // Story Scenarios with hidden DISC triggers
+        const scenes = [
+            {
+                prompt: "SYSTEM ALERT: Facility lockdown initiated by an unknown backdoor script. Security patrol units are closing in on your sector in 60 seconds. What is your immediate protocol?",
+                choices: [
+                    { text: "[A] Smash the emergency manual override panel and force the heavy bulkhead door open yourself.", trait: "D" },
+                    { text: "[B] Broadcast an open audio channel pretending to be the lead system architect to bluff security away.", trait: "I" },
+                    { text: "[C] Fall back to the secure anchor point and wait for your partner to group up before moving.", trait: "S" },
+                    { text: "[D] Pull up the terminal diagnostic logs to analyze the exact error code causing the lockdown loop.", trait: "C" }
+                ]
+            },
+            {
+                prompt: "You reach the main network core terminal, but the interface requires a biometric override sequence or a brute-force decryption command. Time is running out.",
+                choices: [
+                    { text: "[A] Punch the bypass command sequence rapidly and risk short-circuiting the firewall.", trait: "D" },
+                    { text: "[B] Rapidly message the outer perimeter team to see if anyone has a live override key you can borrow.", trait: "I" },
+                    { text: "[C] Take a steady breath, isolate the stable nodes, and proceed step-by-step without errors.", trait: "S" },
+                    { text: "[D] Cross-reference the system architecture schematics to find the primary maintenance loophole.", trait: "C" }
+                ]
+            },
+            {
+                prompt: "The escape elevator doors are jammed halfway. You can see daylight through the crack, but something is blocking the tracks from fully retracting.",
+                choices: [
+                    { text: "[A] Wedge a steel pipe into the frame and muscle the doors open by sheer force.", trait: "D" },
+                    { text: "[B] Yell out to anyone left in the facility corridor to come give you a hand pushing it.", trait: "I" },
+                    { text: "[C] Carefully clear the debris path millimeter by millimeter to ensure structural safety.", trait: "S" },
+                    { text: "[D] Inspect the mechanical gear box layout to locate the emergency clutch release pin.", trait: "C" }
+                ]
+            }
+        ];
 
-        function renderStep() {
-            if (currentStepIndex >= totalSteps) {
-                renderScorecard();
+        function renderScene() {
+            const app = document.getElementById("app");
+
+            if (currentScene >= scenes.length) {
+                renderEnding();
                 return;
             }
 
-            let stepNum = currentStepIndex + 1;
-            stepIndicator.innerText = `Step ${stepNum} of ${totalSteps}`;
-            progressBar.style.width = `${(stepNum / totalSteps) * 100}%`;
+            let scene = scenes[currentScene];
+            let html = `
+                <div class="system-header">
+                    <span>Simulation Node 0${currentScene + 1} / 0${scenes.length}</span>
+                    <span>Telemetry: Active</span>
+                </div>
+                <h2>${scene.prompt}</h2>
+                <div class="choices-container">
+            `;
 
-            let html = "";
+            scene.choices.forEach((choice, index) => {
+                html += `<button class="choice-btn" onclick="makeChoice('${choice.trait}')">${choice.text}</button>`;
+            });
 
-            if (currentStepIndex === 0) {
-                html = `
-                    <h2>Let's map out your income horizon.</h2>
-                    <div class="subtext">To evaluate household protection needs, we look at your annual earnings.</div>
-                    <div class="value-insight">💡 Educational Note: Protecting your active earning trajectory ensures family stability without abrupt lifestyle changes.</div>
-                    <div class="input-group">
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Annual Household Income ($)</label>
-                        <input type="number" id="valIncome" value="${userData.income || ''}" placeholder="e.g., 85000" autofocus />
-                        <button class="action-btn" onclick="saveStep0()">CONTINUE →</button>
-                        <div class="trust-badge">🔒 Confidential & secure. Used strictly for your personal estimate.</div>
-                    </div>
-                `;
-            } else if (currentStepIndex === 1) {
-                html = `
-                    <h2>What major liabilities are you managing?</h2>
-                    <div class="subtext">Accounting for primary debts like a mortgage ensures your family owns their home outright.</div>
-                    <div class="value-insight">💡 Educational Note: Clearing the mortgage balance is typically the #1 priority for surviving family members.</div>
-                    <div class="input-group">
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Remaining Mortgage Balance ($)</label>
-                        <input type="number" id="valMortgage" value="${userData.mortgage || ''}" placeholder="e.g., 250000" autofocus />
-                        <button class="action-btn" onclick="saveStep1()">CONTINUE →</button>
-                    </div>
-                `;
-            } else if (currentStepIndex === 2) {
-                html = `
-                    <h2>Who depends on your income most?</h2>
-                    <div class="subtext">This determines whether your plan requires family income replacement or final expense coverage.</div>
-                    <div class="value-insight">💡 Educational Note: Coverage structures are custom-tailored to fit your exact household dependency layout.</div>
-                    <div class="options-grid">
-                        <button class="option-tile" onclick="saveStep2('Spouse / Partner')">Spouse / Partner</button>
-                        <button class="option-tile" onclick="saveStep2('Young Children')">Young Children</button>
-                        <button class="option-tile" onclick="saveStep2('Adult Dependents')">Adult Dependents</button>
-                        <button class="option-tile" onclick="saveStep2('Just Myself')">Just Myself</button>
-                    </div>
-                `;
-            } else if (currentStepIndex === 3) {
-                html = `
-                    <h2>Do you have existing workplace coverage?</h2>
-                    <div class="subtext">Group plans are helpful, but they usually don't transfer if you change employers.</div>
-                    <div class="value-insight">⚠️ Important: Private individual policies lock in your health tier permanently, regardless of job changes.</div>
-                    <div class="options-grid">
-                        <button class="option-tile" onclick="saveStep3('None / Not Sure')">None / Not Sure</button>
-                        <button class="option-tile" onclick="saveStep3('Basic Work Policy')">Basic Work Policy</button>
-                        <button class="option-tile" onclick="saveStep3('Private Policy')">Private Policy</button>
-                        <button class="option-tile" onclick="saveStep3('Both Work & Private')">Both Work & Private</button>
-                    </div>
-                `;
-            } else if (currentStepIndex === 4) {
-                html = `
-                    <h2>Your Preliminary Health Profile</h2>
-                    <div class="subtext">Age and nicotine status form the preliminary underwriting rating factor.</div>
-                    <div class="value-insight">🎯 Note: Final underwriting also considers comprehensive health history and build charts.</div>
-                    <div class="input-group">
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Current Age</label>
-                        <input type="number" id="valAge" value="${userData.age || ''}" placeholder="e.g., 38" autofocus />
-                        
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600; margin-top:5px;">Tobacco / Nicotine Use (Past 12 Months)</label>
-                        <div class="options-grid" style="margin-top:2px;">
-                            <button type="button" class="option-tile" id="tobaccoNo" onclick="selectTobacco('Non-Tobacco')">No</button>
-                            <button type="button" class="option-tile" id="tobaccoYes" onclick="selectTobacco('Tobacco')">Yes</button>
-                        </div>
+            html += `</div>`;
+            app.innerHTML = html;
+        }
 
-                        <button class="action-btn" onclick="saveStep4()" style="margin-top:10px;">CONTINUE →</button>
-                    </div>
-                `;
-            } else if (currentStepIndex === 5) {
-                html = `
-                    <h2>Where should we send your full snapshot?</h2>
-                    <div class="subtext">Unlock your custom protection benchmark and get matched with optimized carrier options.</div>
-                    <div class="value-insight">🔒 We respect your privacy. No spam, just expert guidance.</div>
-                    <div class="input-group">
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Full Name</label>
-                        <input type="text" id="valName" value="${userData.name || ''}" placeholder="e.g., John Smith" autofocus />
-                        
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Email Address</label>
-                        <input type="email" id="valEmail" value="${userData.email || ''}" placeholder="e.g., john@example.com" />
+        function makeChoice(trait) {
+            scores[trait]++;
+            currentScene++;
+            renderScene();
+        }
 
-                        <label style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Phone Number</label>
-                        <input type="tel" id="valPhone" value="${userData.phone || ''}" placeholder="e.g., (555) 000-0000" />
+        function renderEnding() {
+            const app = document.getElementById("app");
 
-                        <button class="action-btn" onclick="saveStep5()">UNLOCK MY SNAPSHOT →</button>
-                    </div>
-                `;
+            // Find dominant trait
+            let dominantTrait = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+            
+            let profileHeading = "";
+            let profileDescription = "";
+
+            if (dominantTrait === "D") {
+                profileHeading = "Behavioral Signature: High Dominance [D]";
+                profileDescription = "When faced with systemic friction, your immediate instinct is brute-force velocity. You prefer breaking doors over looking for keys. You carry an intense need for control and absolute results, often viewing caution as a waste of precious time.";
+            } else if (dominantTrait === "I") {
+                profileHeading = "Behavioral Signature: High Influence [I]";
+                profileDescription = "You lean heavily on perception, communication, and social engineering. Under acute stress, your default reflex is connection and improvisation rather than isolation. You trust human variables over static structures.";
+            } else if (dominantTrait === "S") {
+                profileHeading = "Behavioral Signature: High Steadiness [S]";
+                profileDescription = "You value stability, pacing, and collaborative safety above all else. When chaos erupts around you, you look for anchors, group alignment, and predictable increments. You resist erratic risks and impulsive gambles.";
+            } else {
+                profileHeading = "Behavioral Signature: High Conscientiousness [C]";
+                profileDescription = "You are a creature of structural logic and precision. When systems lock down, you don't panic or force your way through—you read the fine print. You trust data and code over people, seeking perfection and flaw-free execution.";
             }
 
-            appScreen.innerHTML = html;
-        }
-
-        function saveStep0() {
-            let val = Number(document.getElementById("valIncome").value);
-            if (!val && val !== 0) return;
-            userData.income = val;
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function saveStep1() {
-            let val = Number(document.getElementById("valMortgage").value);
-            if (!val && val !== 0) return;
-            userData.mortgage = val;
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function saveStep2(val) {
-            userData.dependents = val;
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function saveStep3(val) {
-            userData.coverage = val;
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function selectTobacco(status) {
-            userData.tobacco = status;
-            document.getElementById("tobaccoNo").style.borderColor = (status === 'Non-Tobacco') ? '#38bdf8' : '#334155';
-            document.getElementById("tobaccoYes").style.borderColor = (status === 'Tobacco') ? '#38bdf8' : '#334155';
-        }
-
-        function saveStep4() {
-            let ageVal = Number(document.getElementById("valAge").value);
-            if (!ageVal) return;
-            userData.age = ageVal;
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function saveStep5() {
-            let nameVal = document.getElementById("valName").value.trim();
-            let emailVal = document.getElementById("valEmail").value.trim();
-            let phoneVal = document.getElementById("valPhone").value.trim();
-            
-            if (!nameVal || !emailVal) {
-                alert("Please provide your name and email to view your personalized summary.");
-                return;
-            }
-
-            userData.name = nameVal;
-            userData.email = emailVal;
-            userData.phone = phoneVal;
-
-            currentStepIndex++;
-            renderStep();
-        }
-
-        function renderScorecard() {
-            progressContainer.classList.add("hidden");
-
-            // Fully dynamic calculation based on user inputs
-            let incomeMultiplier = (userData.dependents === "Just Myself" || userData.dependents === "Adult Dependents") ? 0 : 10;
-            let calculatedGap = (userData.income * incomeMultiplier) + userData.mortgage;
-            
-            // Age adjustment factor (adds minor underwriting scaling for older ages)
-            if (userData.age > 50) calculatedGap *= 1.15;
-            if (calculatedGap < 50000) calculatedGap = 100000;
-
-            appScreen.innerHTML = `
-                <div style="text-align:center; margin-bottom: 15px;">
-                    <h2 style="color: #4ade80;">Snapshot Ready, ${userData.name.split(' ')[0]}! ✓</h2>
-                    <div class="subtext" style="margin-bottom:15px;">Your custom protection benchmark has been calculated.</div>
+            app.innerHTML = `
+                <div class="system-header">
+                    <span>Simulation Terminated</span>
+                    <span>Status: Analyzed</span>
+                </div>
+                <h2 style="color: #4ade80; margin-bottom: 10px;">Subject Assessment Compiled</h2>
+                <div class="subtext" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px;">
+                    Telemetry recorded across ${scenes.length} crisis decision points.
+                </div>
+                
+                <div class="profile-box">
+                    <div class="profile-title">${profileHeading}</div>
+                    <p>${profileDescription}</p>
+                    <br>
+                    <p style="font-size: 0.8rem; color: #64748b;">Raw Metrics — D: ${scores.D} | I: ${scores.I} | S: ${scores.S} | C: ${scores.C}</p>
                 </div>
 
-                <div class="scorecard">
-                    <div class="score-title">Dynamic Protection Benchmark</div>
-                    <div class="score-value">$${Math.round(calculatedGap).toLocaleString()}</div>
-                    <div class="score-desc">*Calculated dynamically from your $${userData.income.toLocaleString()} income, $${userData.mortgage.toLocaleString()} mortgage, and family tier.</div>
-                </div>
-
-                <div class="summary-list">
-                    <div class="summary-item"><span>Primary Focus:</span> <strong>${userData.dependents}</strong></div>
-                    <div class="summary-item"><span>Current Coverage:</span> <strong>${userData.coverage}</strong></div>
-                    <div class="summary-item"><span>Underwriting Tier:</span> <strong>Age ${userData.age} (${userData.tobacco})</strong></div>
-                    <div class="summary-item"><span>Contact Registered:</span> <strong>${userData.email}</strong></div>
-                </div>
-
-                <button class="action-btn" onclick="window.location.href='https://calendly.com'">SCHEDULE STRATEGY REVIEW</button>
+                <button class="choice-btn" style="margin-top: 20px; text-align: center;" onclick="location.reload()">RE-RUN SIMULATION ⟳</button>
             `;
         }
 
-        renderStep();
+        // Initialize first scene
+        renderScene();
     </script>
 </body>
 </html>
